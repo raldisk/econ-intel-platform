@@ -1,0 +1,487 @@
+<svg viewBox="0 0 1200 840" xmlns="http://www.w3.org/2000/svg"
+  font-family="'IBM Plex Sans','Segoe UI',system-ui,-apple-system,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <path d="M0,0 L0,5 L7,2.5z" fill="#525252"/>
+    </marker>
+    <marker id="arr-teal" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <path d="M0,0 L0,5 L7,2.5z" fill="#009d9a"/>
+    </marker>
+    <marker id="arr-blue" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <path d="M0,0 L0,5 L7,2.5z" fill="#0f62fe"/>
+    </marker>
+  </defs>
+
+  <!-- ══ CANVAS ══ -->
+  <rect width="1200" height="840" fill="#ffffff"/>
+
+  <!-- ══ TITLE BAR ══ -->
+  <rect width="1200" height="48" fill="#161616"/>
+  <rect width="4" height="48" fill="#0f62fe"/>
+  <text x="20" y="18" fill="#f4f4f4" font-size="13" font-weight="600" letter-spacing="0.16">PH-Dashboard</text>
+  <text x="20" y="36" fill="#8d8d8d" font-size="10">Philippine Economic Intelligence Dashboard · DuckDB · FastAPI /api/v1 · Next.js 15 · Streamlit · Dash · APScheduler · IBM Carbon</text>
+  <text x="1188" y="28" text-anchor="end" fill="#525252" font-size="10">raldisk/PH-Dashboard · V15-S15-FINAL</text>
+
+  <!-- ══ LAYER 1: SOURCES ══ -->
+  <text x="16" y="62" fill="#8d8d8d" font-size="8" font-weight="600" letter-spacing="2">LAYER 1 · EXTERNAL DATA SOURCES</text>
+
+  <!-- PSX i=0 cx=73 -->
+  <rect x="16" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="16" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="71" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">PSX</text>
+  <text x="71" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">yfinance API</text>
+  <text x="71" y="105" text-anchor="middle" fill="#198038" font-size="7.5">daily · OHLCV</text>
+  <text x="71" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">RSI-14 · MA20/50</text>
+  <text x="71" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">vol z-score</text>
+  <text x="71" y="142" text-anchor="middle" fill="#0f62fe" font-size="7">18:30 PST cron</text>
+
+  <!-- BSP i=1 cx=190 -->
+  <rect x="134" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="134" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="189" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">BSP</text>
+  <text x="189" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">Bangko Sentral</text>
+  <text x="189" y="105" text-anchor="middle" fill="#198038" font-size="7.5">monthly · HTML</text>
+  <text x="189" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">policy rates</text>
+  <text x="189" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">decision dates</text>
+  <text x="189" y="142" text-anchor="middle" fill="#0f62fe" font-size="7">1st monthly cron</text>
+
+  <!-- FX i=2 cx=307 -->
+  <rect x="252" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="252" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="307" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">FX RATES</text>
+  <text x="307" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">BSP RERB</text>
+  <text x="307" y="105" text-anchor="middle" fill="#198038" font-size="7.5">daily · CSV/HTML</text>
+  <text x="307" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">USD/PHP cross</text>
+  <text x="307" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">Frankfurter fallback</text>
+  <text x="307" y="142" text-anchor="middle" fill="#0f62fe" font-size="7">09:00 PST cron</text>
+
+  <!-- ECONOMIC i=3 cx=424 -->
+  <rect x="370" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="370" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="425" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">ECONOMIC</text>
+  <text x="425" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">PSA OpenSTAT</text>
+  <text x="425" y="105" text-anchor="middle" fill="#ba4e00" font-size="7.5">manual · JSON</text>
+  <text x="425" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">CPI · GDP</text>
+  <text x="425" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">World Bank API</text>
+  <text x="425" y="142" text-anchor="middle" fill="#ba4e00" font-size="7">manual trigger</text>
+
+  <!-- LABOR i=4 cx=541 -->
+  <rect x="488" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="488" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="543" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">LABOR</text>
+  <text x="543" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">PSA LFS</text>
+  <text x="543" y="105" text-anchor="middle" fill="#ba4e00" font-size="7.5">manual · CSV</text>
+  <text x="543" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">unemployment</text>
+  <text x="543" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">by region/quarter</text>
+  <text x="543" y="142" text-anchor="middle" fill="#ba4e00" font-size="7">user-supplied</text>
+
+  <!-- REGIONAL i=5 cx=658 -->
+  <rect x="606" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="606" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="661" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">REGIONAL</text>
+  <text x="661" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">PSA FIES</text>
+  <text x="661" y="105" text-anchor="middle" fill="#ba4e00" font-size="7.5">survey · CSV</text>
+  <text x="661" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">FIES 2021/23</text>
+  <text x="661" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">synthetic fallback</text>
+  <text x="661" y="142" text-anchor="middle" fill="#ba4e00" font-size="7">per survey cycle</text>
+
+  <!-- PRICES i=6 cx=775 -->
+  <rect x="724" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="724" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="779" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">PRICES</text>
+  <text x="779" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">PSA + DOE</text>
+  <text x="779" y="105" text-anchor="middle" fill="#198038" font-size="7.5">6h · CSV/scrape</text>
+  <text x="779" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">12 commodities</text>
+  <text x="779" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">DOE fuel weekly</text>
+  <text x="779" y="142" text-anchor="middle" fill="#0f62fe" font-size="7">interval 6h</text>
+
+  <!-- SENTIMENT i=7 cx=892 -->
+  <rect x="842" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="842" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="897" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">SENTIMENT</text>
+  <text x="897" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">Reddit API</text>
+  <text x="897" y="105" text-anchor="middle" fill="#198038" font-size="7.5">4h · JSON</text>
+  <text x="897" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">VADER scores</text>
+  <text x="897" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">90d synthetic fallback</text>
+  <text x="897" y="142" text-anchor="middle" fill="#0f62fe" font-size="7">interval 4h</text>
+
+  <!-- COA i=8 cx=1009 -->
+  <rect x="960" y="66" width="110" height="84" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="960" y="66" width="110" height="3" fill="#0f62fe"/>
+  <text x="1015" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">COA</text>
+  <text x="1015" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">Annual Audit PDFs</text>
+  <text x="1015" y="105" text-anchor="middle" fill="#ba4e00" font-size="7.5">annual · PDF</text>
+  <text x="1015" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">budget utilization</text>
+  <text x="1015" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">low-utilizer flags</text>
+  <text x="1015" y="142" text-anchor="middle" fill="#ba4e00" font-size="7">manual trigger</text>
+
+  <!-- GEODATA i=9 cx=1133 — teal accent -->
+  <rect x="1078" y="66" width="110" height="84" fill="#d9fbfb" stroke="#009d9a" stroke-width="1"/>
+  <rect x="1078" y="66" width="110" height="3" fill="#009d9a"/>
+  <text x="1133" y="82" text-anchor="middle" fill="#161616" font-size="9" font-weight="600">GEODATA</text>
+  <text x="1133" y="94" text-anchor="middle" fill="#6f6f6f" font-size="8">GeoRisk ArcGIS</text>
+  <text x="1133" y="105" text-anchor="middle" fill="#198038" font-size="7.5">monthly · GeoJSON</text>
+  <text x="1133" y="116" text-anchor="middle" fill="#6f6f6f" font-size="7">hazard layers</text>
+  <text x="1133" y="127" text-anchor="middle" fill="#6f6f6f" font-size="7">province boundaries</text>
+  <text x="1133" y="142" text-anchor="middle" fill="#009d9a" font-size="7">1st monthly 03:00</text>
+
+  <!-- Source → Pipeline arrows -->
+  <g stroke="#c6c6c6" stroke-width="1" fill="none" marker-end="url(#arr)">
+    <line x1="71"   y1="150" x2="71"   y2="168"/>
+    <line x1="189"  y1="150" x2="189"  y2="168"/>
+    <line x1="307"  y1="150" x2="307"  y2="168"/>
+    <line x1="425"  y1="150" x2="425"  y2="168"/>
+    <line x1="543"  y1="150" x2="543"  y2="168"/>
+    <line x1="661"  y1="150" x2="661"  y2="168"/>
+    <line x1="779"  y1="150" x2="779"  y2="168"/>
+    <line x1="897"  y1="150" x2="897"  y2="168"/>
+    <line x1="1015" y1="150" x2="1015" y2="168"/>
+    <line x1="1133" y1="150" x2="1133" y2="168" stroke="#009d9a"/>
+  </g>
+
+  <!-- ══ LAYER 2: PIPELINES ══ -->
+  <text x="16" y="164" fill="#8d8d8d" font-size="8" font-weight="600" letter-spacing="2">LAYER 2 · ETL PIPELINES · run.py sole entrypoint · extract → transform → load</text>
+  <rect x="16" y="168" width="1168" height="132" fill="#edf5ff" stroke="#0f62fe" stroke-width="1"/>
+
+  <!-- Pipeline columns: same x positions as sources -->
+  <!-- PSX pipeline -->
+  <rect x="19" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="19" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="71" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">psx</text>
+  <text x="71" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="71" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">yfinance OHLCV fetch</text>
+  <text x="71" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="71" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">RSI·MA·vol-z·cross</text>
+  <text x="71" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="71" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ stg_psx_prices.parquet</text>
+  <text x="71" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- BSP pipeline -->
+  <rect x="136" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="136" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="188" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">bsp</text>
+  <text x="188" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="188" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">HTML scrape + parse</text>
+  <text x="188" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="188" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">date norm · dedup</text>
+  <text x="188" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="188" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ bsp_policy_rates</text>
+  <text x="188" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- FX pipeline -->
+  <rect x="253" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="253" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="305" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">fx</text>
+  <text x="305" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="305" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">BSP CSV + fallback</text>
+  <text x="305" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="305" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">real exchange rate</text>
+  <text x="305" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="305" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ stg_fx_rates</text>
+  <text x="305" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- ECONOMIC pipeline -->
+  <rect x="370" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="370" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="422" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">economic</text>
+  <text x="422" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="422" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">WB API · PSA</text>
+  <text x="422" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="422" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">CPI trend · remit</text>
+  <text x="422" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="422" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ cpi_trend · gdp</text>
+  <text x="422" y="280" text-anchor="middle" fill="#ba4e00" font-size="7">manual CLI</text>
+
+  <!-- LABOR pipeline -->
+  <rect x="487" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="487" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="539" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">labor</text>
+  <text x="539" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="539" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">LFS CSV ingest</text>
+  <text x="539" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="539" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">region norm · PSA order</text>
+  <text x="539" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="539" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ lfs_labor_force</text>
+  <text x="539" y="280" text-anchor="middle" fill="#ba4e00" font-size="7">manual CLI</text>
+
+  <!-- REGIONAL pipeline -->
+  <rect x="604" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="604" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="656" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">regional</text>
+  <text x="656" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="656" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">FIES CSV / synthetic</text>
+  <text x="656" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="656" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">Gini · quintiles</text>
+  <text x="656" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="656" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ fies_regional</text>
+  <text x="656" y="280" text-anchor="middle" fill="#ba4e00" font-size="7">manual CLI</text>
+
+  <!-- PRICES pipeline -->
+  <rect x="721" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="721" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="773" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">prices</text>
+  <text x="773" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="773" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">PSA/DOE scrape</text>
+  <text x="773" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="773" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">STL decomposition</text>
+  <text x="773" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="773" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ commodity_prices</text>
+  <text x="773" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- SENTIMENT pipeline -->
+  <rect x="838" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="838" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="890" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">sentiment</text>
+  <text x="890" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="890" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">Reddit PRAW / synth</text>
+  <text x="890" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="890" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">VADER · 7d rolling</text>
+  <text x="890" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="890" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ social_sentiment</text>
+  <text x="890" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- COA pipeline -->
+  <rect x="955" y="174" width="104" height="118" fill="#ffffff" stroke="#0f62fe" stroke-width="1"/>
+  <rect x="955" y="174" width="104" height="20" fill="#0f62fe"/>
+  <text x="1007" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">coa</text>
+  <text x="1007" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">extract.py</text>
+  <text x="1007" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">PDF parse / synth</text>
+  <text x="1007" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7.5">transform.py</text>
+  <text x="1007" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7">obligation rates</text>
+  <text x="1007" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7.5">load.py</text>
+  <text x="1007" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ coa_budget_util</text>
+  <text x="1007" y="280" text-anchor="middle" fill="#ba4e00" font-size="7">manual CLI</text>
+
+  <!-- GEODATA pipeline — teal -->
+  <rect x="1072" y="174" width="104" height="118" fill="#d9fbfb" stroke="#009d9a" stroke-width="1"/>
+  <rect x="1072" y="174" width="104" height="20" fill="#009d9a"/>
+  <text x="1124" y="188" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="600">geodata</text>
+  <text x="1124" y="204" text-anchor="middle" fill="#6f6f6f" font-size="7.5">run.py entrypoint</text>
+  <text x="1124" y="215" text-anchor="middle" fill="#6f6f6f" font-size="7">load → hazard_overlap</text>
+  <text x="1124" y="226" text-anchor="middle" fill="#6f6f6f" font-size="7">→ aggregate → load</text>
+  <text x="1124" y="237" text-anchor="middle" fill="#6f6f6f" font-size="7.5">each step guarded</text>
+  <text x="1124" y="248" text-anchor="middle" fill="#6f6f6f" font-size="7">province × flood/ls</text>
+  <text x="1124" y="259" text-anchor="middle" fill="#6f6f6f" font-size="7">→ regional_map view</text>
+  <text x="1124" y="280" text-anchor="middle" fill="#198038" font-size="7">scheduled</text>
+
+  <!-- Pipeline → Storage arrows -->
+  <g stroke="#c6c6c6" stroke-width="1" fill="none" marker-end="url(#arr)">
+    <line x1="71"   y1="300" x2="71"   y2="316"/>
+    <line x1="188"  y1="300" x2="188"  y2="316"/>
+    <line x1="305"  y1="300" x2="305"  y2="316"/>
+    <line x1="422"  y1="300" x2="422"  y2="316"/>
+    <line x1="539"  y1="300" x2="539"  y2="316"/>
+    <line x1="656"  y1="300" x2="656"  y2="316"/>
+    <line x1="773"  y1="300" x2="773"  y2="316"/>
+    <line x1="890"  y1="300" x2="890"  y2="316"/>
+    <line x1="1007" y1="300" x2="1007" y2="316"/>
+    <line x1="1124" y1="300" x2="1124" y2="316" stroke="#009d9a"/>
+  </g>
+
+  <!-- ══ LAYER 3: DUCKDB STORAGE ══ -->
+  <text x="16" y="312" fill="#8d8d8d" font-size="8" font-weight="600" letter-spacing="2">LAYER 3 · STORAGE · DuckDB (local · no server · no ORM)</text>
+  <rect x="16" y="316" width="1168" height="106" fill="#262626"/>
+  <rect x="16" y="316" width="4" height="106" fill="#f1c21b"/>
+
+  <!-- DuckDB label -->
+  <text x="110" y="338" fill="#f4f4f4" font-size="11" font-weight="600">DuckDB</text>
+  <text x="110" y="352" fill="#8d8d8d" font-size="8">db/duckdb_local.db · schema.sql · schema_geodata.sql · db/init.py idempotent bootstrap</text>
+  <text x="110" y="363" fill="#8d8d8d" font-size="8">seed_region_crosswalk.sql · 17 PH regions · PSGC codes · REQUIRED_OBJECTS: 22 verified on init</text>
+
+  <!-- Views grid -->
+  <text x="110" y="380" fill="#f1c21b" font-size="8" font-weight="600">VIEWS (17)</text>
+  <g fill="#a8a8a8" font-size="7.5">
+    <text x="110" y="393">psx_prices · bsp_policy_rates · stg_fx_rates · cpi_trend · lfs_labor_force</text>
+    <text x="110" y="405">fies_regional · commodity_prices · food_price_decomp · social_sentiment · coa_budget_util</text>
+    <text x="110" y="417">regional_map · road_quality_by_province · provincial_vulnerability_index · hazard_overlap_by_province</text>
+  </g>
+
+  <!-- Cross-pipeline joins -->
+  <line x1="760" y1="320" x2="760" y2="420" stroke="#393939" stroke-width="1"/>
+  <text x="770" y="338" fill="#f1c21b" font-size="8" font-weight="600">CROSS-PIPELINE JOINS</text>
+  <g fill="#a8a8a8" font-size="7.5">
+    <text x="770" y="353">psx_vs_bsp — ASOF JOIN on date</text>
+    <text x="770" y="365">real_exchange_rate — cpi_trend × stg_fx_rates</text>
+    <text x="770" y="377">cpi_vs_fx — dual-axis correlation</text>
+    <text x="770" y="389">sentiment_vs_psx — social × price signal</text>
+  </g>
+  <text x="770" y="408" fill="#a6c8ff" font-size="7.5">TTL cache: lib/sources/ttl_cache.py · threading.Lock · mtime-based</text>
+
+  <!-- ══ LAYER 4: SCHEDULER + API ══ -->
+  <text x="16" y="434" fill="#8d8d8d" font-size="8" font-weight="600" letter-spacing="2">LAYER 4 · ORCHESTRATION + SERVING</text>
+
+  <!-- Scheduler box -->
+  <rect x="16" y="438" width="320" height="100" fill="#f4f4f4" stroke="#393939" stroke-width="1"/>
+  <rect x="16" y="438" width="320" height="24" fill="#393939"/>
+  <text x="176" y="455" text-anchor="middle" fill="#f4f4f4" font-size="10" font-weight="600">APScheduler · BackgroundScheduler</text>
+  <text x="176" y="466" text-anchor="middle" fill="#8d8d8d" font-size="7.5">Asia/Manila timezone · PH_SCHEDULER_ENABLED=true</text>
+  <g fill="#525252" font-size="8">
+    <text x="28" y="480">psx       cron   18:30 PST daily</text>
+    <text x="28" y="492">fx        cron   09:00 PST daily</text>
+    <text x="28" y="504">bsp       cron   1st monthly 08:00 PST</text>
+    <text x="200" y="480">prices    interval   6h</text>
+    <text x="200" y="492">sentiment interval   4h</text>
+    <text x="200" y="504">geodata   cron   1st monthly 03:00 PST</text>
+  </g>
+  <text x="28" y="528" fill="#8d8d8d" font-size="7.5">static (manual CLI): economic · labor · regional · coa · geodata</text>
+
+  <!-- FastAPI box -->
+  <rect x="348" y="438" width="484" height="100" fill="#0f62fe"/>
+  <rect x="348" y="438" width="484" height="24" fill="#0043ce"/>
+  <text x="590" y="455" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="600">FastAPI · api/main.py</text>
+  <text x="590" y="466" text-anchor="middle" fill="#a6c8ff" font-size="7.5">CORS: localhost:3000 · :3001 · :5173 · all routes under /api/v1</text>
+  <g fill="#edf5ff" font-size="8">
+    <text x="360" y="482">GET /api/v1/data?view=&amp;format=geojson</text>
+    <text x="360" y="494">  → 1h TTL cache · geojson_str_{view} key · O(1) hit</text>
+    <text x="360" y="506">  → X-PH-Synthetic-Data header on every response</text>
+    <text x="590" y="482">GET /api/v1/views · /query · /kpi</text>
+    <text x="590" y="494">GET /health           (liveness · always 200)</text>
+    <text x="590" y="506">GET /health/ready     (readiness · DuckDB + pipeline_runs · 503 on fail)</text>
+  </g>
+  <text x="360" y="528" fill="#a6c8ff" font-size="7.5">api/routes/data.py · health.py · api/schemas/ · api/services/query_service.py</text>
+
+  <!-- Infra mini-box -->
+  <rect x="844" y="438" width="340" height="100" fill="#f4f4f4" stroke="#e0e0e0" stroke-width="1"/>
+  <rect x="844" y="438" width="340" height="24" fill="#393939"/>
+  <text x="1014" y="455" text-anchor="middle" fill="#f4f4f4" font-size="10" font-weight="600">Container · CI/CD · Infra</text>
+  <g fill="#525252" font-size="8">
+    <text x="856" y="475">Dockerfile  python:3.11-slim · libgdal/geos</text>
+    <text x="856" y="487">docker-compose.yml  api:8000 · dashboard:8501</text>
+    <text x="856" y="499">.github/workflows/ci.yml</text>
+    <text x="856" y="511">  Python: lint · pytest · db smoke · geodata smoke</text>
+    <text x="856" y="523">  Next.js: npm ci · build (dash + hazard-map)</text>
+    <text x="856" y="533" fill="#da1e28" font-size="7">⚠ seed GeoJSON gitignored — use git add -f on push</text>
+  </g>
+
+  <!-- Storage → Sched/API arrows -->
+  <g stroke="#525252" stroke-width="1" fill="none" marker-end="url(#arr)">
+    <line x1="176" y1="422" x2="176" y2="436"/>
+    <line x1="590" y1="422" x2="590" y2="436"/>
+  </g>
+
+  <!-- ══ LAYER 5: PRESENTATION ══ -->
+  <text x="16" y="552" fill="#8d8d8d" font-size="8" font-weight="600" letter-spacing="2">LAYER 5 · PRESENTATION</text>
+
+  <!-- API → Presentation arrows -->
+  <g stroke="#0f62fe" stroke-width="1" fill="none" marker-end="url(#arr-blue)">
+    <line x1="480" y1="542" x2="130" y2="558"/>
+    <line x1="530" y1="542" x2="382" y2="558"/>
+    <line x1="620" y1="542" x2="660" y2="558"/>
+    <line x1="660" y1="542" x2="920" y2="558"/>
+  </g>
+
+  <!-- Next.js Dashboard :3000 -->
+  <rect x="16" y="556" width="270" height="210" fill="#ffffff" stroke="#0f62fe" stroke-width="1.5"/>
+  <rect x="16" y="556" width="270" height="28" fill="#0f62fe"/>
+  <text x="151" y="572" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="600">Next.js Dashboard</text>
+  <text x="151" y="583" text-anchor="middle" fill="#a6c8ff" font-size="8">app/ · IBM Carbon UI · port 3000</text>
+  <g fill="#525252" font-size="8">
+    <text x="28" y="600">IBM Carbon light token system</text>
+    <text x="28" y="612">IBM Plex Sans 300/400/600</text>
+    <text x="28" y="624">IBM Plex Mono 400</text>
+    <text x="28" y="636">IBM Blue 60 #0f62fe sole accent</text>
+    <text x="28" y="648">border-radius: 0px</text>
+    <text x="28" y="660">--data-* Gray 90/80 (chart panels)</text>
+    <text x="28" y="672">shadcn/ui · Tailwind v4 · Recharts</text>
+    <text x="28" y="684">SQL editor · KPI cards · explorer</text>
+    <text x="28" y="696">control panel · sidebar · data table</text>
+  </g>
+  <text x="28" y="714" fill="#0f62fe" font-size="8" font-weight="600">localhost:3000</text>
+  <text x="28" y="726" fill="#8d8d8d" font-size="7">calls /api/v1/data · /views · /query · /kpi</text>
+  <text x="28" y="738" fill="#8d8d8d" font-size="7">app/globals.css · app/layout.tsx · lib/api.ts</text>
+  <text x="28" y="756" fill="#8d8d8d" font-size="7">components/dashboard/ · components/ui/</text>
+
+  <!-- ph-hazard-map :3001 -->
+  <rect x="298" y="556" width="270" height="210" fill="#d9fbfb" stroke="#009d9a" stroke-width="1.5"/>
+  <rect x="298" y="556" width="270" height="28" fill="#009d9a"/>
+  <text x="433" y="572" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="600">ph-hazard-map</text>
+  <text x="433" y="583" text-anchor="middle" fill="#d9fbfb" font-size="8">Next.js 15 · MapLibre GL · port 3001</text>
+  <g fill="#00539a" font-size="8">
+    <text x="310" y="600">MapLibre GL map engine</text>
+    <text x="310" y="612">Layer views: regional_map</text>
+    <text x="310" y="624">road_quality_by_province</text>
+    <text x="310" y="636">provincial_vulnerability_index</text>
+    <text x="310" y="648">Static: flood_susceptibility</text>
+    <text x="310" y="660">base_surge · provinces GeoJSON</text>
+    <text x="310" y="672">Seed GeoJSON cold-start render</text>
+    <text x="310" y="684">(⚠ gitignored — git add -f)</text>
+    <text x="310" y="696">CORS requires port 3001 in API</text>
+  </g>
+  <text x="310" y="714" fill="#007d79" font-size="8" font-weight="600">localhost:3001</text>
+  <text x="310" y="726" fill="#525252" font-size="7">calls GET /api/v1/data?view=&amp;format=geojson</text>
+  <text x="310" y="738" fill="#525252" font-size="7">ph-hazard-map/app/ · lib/layers.ts</text>
+  <text x="310" y="756" fill="#525252" font-size="7">components/MapLibreMap.tsx</text>
+
+  <!-- Streamlit :8501 -->
+  <rect x="580" y="556" width="300" height="210" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
+  <rect x="580" y="556" width="300" height="28" fill="#262626"/>
+  <text x="730" y="572" text-anchor="middle" fill="#f4f4f4" font-size="10" font-weight="600">Streamlit · apps/streamlit_app.py</text>
+  <text x="730" y="583" text-anchor="middle" fill="#8d8d8d" font-size="8">Analyst / narrative view · port 8501 · DuckDB direct</text>
+  <g fill="#525252" font-size="8">
+    <text x="592" y="600">📊 Status — pipeline health</text>
+    <text x="592" y="612">📈 Markets — candlestick · MA · RSI</text>
+    <text x="592" y="624">🏦 Monetary Policy — rate + CPI overlay</text>
+    <text x="592" y="636">💱 FX — rates · vol · cross-currency</text>
+    <text x="592" y="648">👷 Labor — regional unemployment map</text>
+    <text x="730" y="600">🛒 Prices — STL + fuel</text>
+    <text x="730" y="612">🗺️ Regional — Gini + quintiles</text>
+    <text x="730" y="624">📉 Economy — GDP + CPI + remit</text>
+    <text x="730" y="636">💬 Sentiment — topic trend</text>
+    <text x="730" y="648">🏛️ Budget — COA utilization</text>
+    <text x="730" y="660">🔀 Cross-Analysis — dual-axis</text>
+  </g>
+  <text x="592" y="676" fill="#8d8d8d" font-size="7">components/charts.py · maps.py · tables.py</text>
+  <text x="592" y="688" fill="#8d8d8d" font-size="7">@st.cache_data(ttl=60) · APScheduler thread in-process</text>
+  <text x="592" y="714" fill="#525252" font-size="8" font-weight="600">localhost:8501</text>
+  <text x="592" y="726" fill="#8d8d8d" font-size="7">reads DuckDB directly · no API layer</text>
+  <text x="592" y="738" fill="#8d8d8d" font-size="7">11 pages · @st.cache_data(ttl=60)</text>
+  <text x="592" y="756" fill="#8d8d8d" font-size="7">PH_SCHEDULER_ENABLED=true enables sched thread</text>
+
+  <!-- Dash :8050 -->
+  <rect x="892" y="556" width="292" height="210" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
+  <rect x="892" y="556" width="292" height="28" fill="#262626"/>
+  <text x="1038" y="572" text-anchor="middle" fill="#f4f4f4" font-size="10" font-weight="600">Dash · apps/dash_app.py</text>
+  <text x="1038" y="583" text-anchor="middle" fill="#8d8d8d" font-size="8">Power-user / engineer view · port 8050</text>
+  <line x1="1038" y1="590" x2="1038" y2="762" stroke="#e0e0e0" stroke-width="1"/>
+  <g fill="#525252" font-size="8">
+    <text x="904" y="600" font-weight="600" fill="#161616">Tab 1 · Explorer</text>
+    <text x="904" y="612">17 DuckDB views selectable</text>
+    <text x="904" y="624">date range picker · auto-detect</text>
+    <text x="904" y="636">X / Y / Color axis dropdowns</text>
+    <text x="904" y="648">line · bar · scatter · area</text>
+    <text x="904" y="660">box · histogram chart types</text>
+    <text x="904" y="672">10k row cap · sort + filter</text>
+    <text x="904" y="684">CSV + Parquet download</text>
+    <text x="1046" y="600" font-weight="600" fill="#161616">Tab 2 · SQL ★</text>
+    <text x="1046" y="612">DuckDB read-only exec</text>
+    <text x="1046" y="624">pre-loaded cross-domain:</text>
+    <text x="1046" y="636">psx × bsp × cpi aligned</text>
+    <text x="1046" y="648">4 quick-start examples</text>
+    <text x="1046" y="660">1k row result table</text>
+    <text x="1046" y="672">CSV result download</text>
+  </g>
+  <text x="904" y="714" fill="#525252" font-size="8" font-weight="600">localhost:8050</text>
+  <text x="904" y="726" fill="#8d8d8d" font-size="7">reads DuckDB directly · no API layer</text>
+  <text x="904" y="738" fill="#8d8d8d" font-size="7">Dash Bootstrap Components</text>
+  <text x="904" y="756" fill="#8d8d8d" font-size="7">★ SQL passthrough = primary power-user artifact</text>
+
+  <!-- ══ LEGEND ══ -->
+  <rect x="0" y="778" width="1200" height="62" fill="#f4f4f4"/>
+  <line x1="0" y1="778" x2="1200" y2="778" stroke="#e0e0e0" stroke-width="1"/>
+
+  <rect x="16" y="792" width="10" height="8" fill="#198038"/>
+  <text x="32" y="800" fill="#525252" font-size="8">scheduled pipeline</text>
+  <rect x="140" y="792" width="10" height="8" fill="#ba4e00"/>
+  <text x="156" y="800" fill="#525252" font-size="8">manual / CLI trigger</text>
+  <rect x="270" y="792" width="10" height="8" fill="#0f62fe"/>
+  <text x="286" y="800" fill="#525252" font-size="8">IBM Carbon · /api/v1</text>
+  <rect x="390" y="792" width="10" height="8" fill="#009d9a"/>
+  <text x="406" y="800" fill="#525252" font-size="8">geodata / MapLibre</text>
+  <rect x="505" y="792" width="10" height="8" fill="#262626"/>
+  <text x="521" y="800" fill="#525252" font-size="8">data-zone (Sentry Gray 90/80)</text>
+  <rect x="670" y="792" width="10" height="8" fill="#f1c21b"/>
+  <text x="686" y="800" fill="#525252" font-size="8">DuckDB storage</text>
+
+  <text x="16"  y="828" fill="#6f6f6f" font-size="7.5">V15-S15-FINAL · ph-dashboard-merged-final.zip · 234 files · IBM Carbon design · Sentry data-zone · DuckDB-native · no dbt · no ORM</text>
+  <text x="800" y="828" fill="#da1e28" font-size="7.5">⚠ pre-deploy: auth layer · rate limiting · git add -f seed GeoJSON · .env (not .env.example) in compose</text>
+</svg>
