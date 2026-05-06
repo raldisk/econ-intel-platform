@@ -302,18 +302,6 @@ All pipelines complete without error in fallback mode. The Status page
 
 ---
 
-## Hardware notes
-
-Built for **Intel Pentium CPU, Windows 10 native** (no Docker, no WSL required
-for development):
-
-- DuckDB replaces PostgreSQL — no server process required
-- APScheduler runs as a background thread inside Streamlit — no separate worker
-- VADER replaces transformer-based NLP (BERT/XLM-RoBERTa excluded: >10 min/batch on Pentium)
-- H.264-compatible output where applicable; no GPU dependencies anywhere
-
----
-
 ## Key dependencies
 
 ```
