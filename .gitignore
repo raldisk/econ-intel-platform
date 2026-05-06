@@ -11,31 +11,15 @@ next.user-config.*
 .env*.local
 
 # Common ignores
-node_modules
+node_modules/
 .next/
 .DS_Store
-
-
-__pycache__/
-*.pyc
-*.pyo
-
-data/
-*.parquet
-*.db
-*.duckdb
-
-*.zip
-
-
-
-
-#new
 
 # Python
 **/__pycache__/
 *.pyc
 *.pyo
+*.pyd
 
 # Data artifacts — never commit
 data/
@@ -43,8 +27,15 @@ data/
 db/*.db
 db/*.duckdb
 
-# Archives
+# Archives — never commit
 *.zip
 
 # Dead prototypes
 old-*
+
+# Scheduler heartbeat — runtime artifact
+db/scheduler.heartbeat
+
+# API request logs — runtime artifact
+api/logs/
+scheduler/logs/
