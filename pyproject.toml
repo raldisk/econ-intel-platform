@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=72", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ph-dashboard"
+version = "0.1.0"
+description = "Philippine Unified Data Dashboard — local DuckDB platform"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+# Runtime deps are tracked in requirements.txt (pinned).
+# This section lists them unpinned so `pip install -e .` works without
+# conflicting with the pinned requirements.txt on the same machine.
+dependencies = [
+    "duckdb",
+    "pandas",
+    "pyarrow",
+    "numpy>=1.26",  # PATCH FINDING-007: direct import in 6 pipeline files; declare explicitly
+    "yfinance",
+    "httpx",
+    "beautifulsoup4",
+    "plotly",
+    "streamlit",
+    "dash",
+    "dash-bootstrap-components",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "apscheduler",
+    "pdfplumber",
+    # PATCH FINDING-008: structlog removed — declared but never imported
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-mock>=3.14",
+]
+# PATCH FINDING-008: vaderSentiment and praw imported in sentiment/extract.py
+# but previously undeclared. Added as optional extras so a fresh install
+# surface the missing dep explicitly rather than silently falling back to
+# synthetic data. Install with: pip install -e ".[sentiment]"
+sentiment = [
+    "vaderSentiment>=3.3",
+    "praw>=7.0",
+]
+
+# ---------------------------------------------------------------------------
+# Package discovery
+# Ensures all top-level packages (pipelines, lib, apps, components,
+# scheduler, db) are importable after `pip install -e .`
+# ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "pipelines*",
+    "lib*",
+    "apps*",
+    "components*",
+    "scheduler*",
+    "db*",
+]
+exclude = ["tests*", "notebooks*", "data*"]
+
+# ---------------------------------------------------------------------------
+# pytest configuration
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+log_cli = true
+log_cli_level = "WARNING"
+
+# ---------------------------------------------------------------------------
+# Coverage (optional — run with: pytest --cov=pipelines --cov=lib)
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["pipelines", "lib"]
+omit = ["tests/*", "notebooks/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+
+
+# pyproject.toml
+dependencies = [
+  ...
+  "statsmodels>=0.14"
+]
