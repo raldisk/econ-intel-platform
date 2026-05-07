@@ -1,16 +1,65 @@
 # PH Economic Intelligence Dashboard
 
-A locally-hosted multi-domain data platform integrating nine Philippine economic
-datasets into a unified DuckDB-backed analytical dashboard. Built for finance-sector
-portfolio positioning — the architecture demonstrates the complete data engineering
-stack in a single repository.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![DuckDB](https://img.shields.io/badge/DuckDB-0.10+-FFC832?style=for-the-badge&logo=duckdb&logoColor=black)](https://duckdb.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.35+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
-![Status](https://img.shields.io/badge/status-RC-brightgreen)
-![Version](https://img.shields.io/badge/version-V15--S15--FINAL-blue)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![DuckDB](https://img.shields.io/badge/DuckDB-0.10%2B-yellow)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-red)
-![Next.js](https://img.shields.io/badge/Next.js-15-black)
+> **Philippine Economic Intelligence Dashboard** — a locally-hosted, multi-domain analytics platform integrating ten Philippine economic datasets into a unified DuckDB-backed dashboard with four presentation clients.
+
+Data flows from nine public government and market sources through ETL pipelines into a local DuckDB store, orchestrated by APScheduler, served by FastAPI, and visualised in Next.js, Streamlit, and Dash.
+
+---
+
+## Ecosystem
+
+This dashboard is the **downstream consumer** of a two-tier Philippine economic intelligence platform.
+
+**[ph-macro-lakehouse](https://github.com/raldisk/ph-macro-lakehouse)** is the upstream data quality layer — a production-grade Bronze → Silver → Gold batch pipeline for PSA CPI and BSP FX on S3/MinIO. When the lakehouse is available, the dashboard adapter consumes `GET /gold/{dataset}/data` and bypasses its own BSP/PSA pipelines. When it is unavailable, the dashboard falls back to its embedded pipelines automatically.
+
+---
+
+## Table of Contents
+
+- [Ecosystem](#ecosystem)
+- [Repository Layout](#repository-layout)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Service Endpoints](#service-endpoints)
+- [Running the Pipelines](#running-the-pipelines)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Data Gaps and Fallbacks](#data-gaps-and-fallbacks)
+- [Development](#development)
+- [Scheduled Pipelines](#scheduled-pipelines)
+- [Failure Modes](#failure-modes)
+- [Tech Stack](#tech-stack)
+
+---
+
+## Repository Layout
+
+```
+PH-Dashboard/
+├── config.py            ← single source of truth for all paths, TTLs, and URLs
+├── pipelines/           ← nine ETL pipeline modules (uniform extract/transform/load/run interface)
+├── api/                 ← FastAPI — read-only DuckDB serving layer
+├── scheduler/           ← standalone APScheduler process (decoupled from all frontends)
+├── apps/                ← Streamlit (11 pages) + Dash (explorer + SQL passthrough)
+├── components/          ← shared Plotly factories, table helpers, map components
+├── lib/                 ← DuckDB helpers, shared HTTP source clients, view registry
+├── db/                  ← schema.sql DDL (22 objects) + idempotent bootstrap
+├── app/                 ← Next.js 15 app directory (primary UI, port 3000)
+├── components/dashboard/← Next.js dashboard components
+├── components/ui/       ← shadcn/ui primitives
+├── hooks/               ← React hooks
+├── tests/               ← pytest unit and schema bootstrap tests
+└── data/                ← raw/, processed/, cache/ (all gitignored)
+```
+
+`pipeline/` (Python + DuckDB) and `app/` (Node 20) use separate runtimes and cannot share a package manager. `make` is the single entry point that coordinates both.
 
 ---
 
@@ -18,187 +67,126 @@ stack in a single repository.
 
 ![PH-Dashboard Architecture](img/architecture.svg)
 
-Five layers: external data sources → ETL pipelines → DuckDB local storage →
-orchestration + FastAPI serving → four presentation clients. The teal lane tracks
-the geospatial pipeline end-to-end; Streamlit and Dash read DuckDB directly (no API
-hop); Next.js and ph-hazard-map consume the FastAPI `/api/v1` layer.
+Five layers: external data sources → ETL pipelines → DuckDB local storage → orchestration + FastAPI serving → four presentation clients.
 
-> **Pre-deploy checklist (⚠):** add auth layer · add rate limiting ·
-> `git add -f` seed GeoJSON · use `.env` not `.env.example` in compose.
-
----
-
-## What it does
-
-| Domain | Source | Pipeline | Tables |
-|---|---|---|---|
-| PSX Equity Prices | yfinance | `pipelines/psx/` | `psx_prices` |
-| BSP Monetary Policy | BSP bulletins (HTML) | `pipelines/bsp/` | `bsp_policy_rate` |
-| FX Rates | BSP reference rates | `pipelines/fx/` | `fx_rates`, `stg_fx_rates`, `fx_volatility` |
-| Economic Indicators | PSA OpenSTAT + World Bank | `pipelines/economic/` | `cpi_trend`, `gdp_tracker`, `remittance_trend`, `economic_dashboard` |
-| Labor Market | PSA LFS (manual CSV) | `pipelines/labor/` | `labor_market` |
-| Regional Inequality | PSA FIES (synthetic fallback) | `pipelines/regional/` | `regional_inequality` |
-| Commodity Prices | PSA Price Situationer + DOE | `pipelines/prices/` | `commodity_prices`, `food_price_decomposition` |
-| Social Sentiment | Reddit (VADER-scored) | `pipelines/sentiment/` | `social_sentiment` |
-| COA Budget | COA Annual Audit Reports (PDF) | `pipelines/coa/` | `coa_budget_utilization` |
-| Geodata / Hazard | GeoRisk PH ArcGIS | `pipelines/geodata/` | `regional_map`, `hazard_overlap_by_province` |
+**Key design rules:**
+- DuckDB is the single store — all curated data lives as Parquet files registered as views; no separate database server required
+- Only one read-write DuckDB connection is permitted at a time; `lib/db.get_write_conn()` is used exclusively by pipeline `load.py` files; all app code uses `get_read_conn()`
+- The scheduler is a standalone process — it is never embedded in any frontend, ensuring pipeline execution survives Streamlit restarts and hot-reloads
+- `lib/views.py` is the single source of truth for the API security allowlist (`ALLOWED_VIEWS`), chart axis defaults (`VIEW_AXIS_HINTS`), and synthetic-data disclosure (`synthetic_status()`)
+- Every pipeline falls back to synthetic data when credentials or source files are absent — the dashboard is always fully operational
 
 ---
 
-## Quick start
+## Quick Start
 
-> **Startup order matters.** `init` must complete before `api` or `scheduler`.
-> The scheduler must run in a **separate terminal** — it is not embedded in any frontend.
+**Prerequisites:** Python 3.11+, Node 20+.
 
 ```bash
-# 1. Install
+git clone https://github.com/raldisk/ph-dashboard.git
+cd ph-dashboard
+
+# 1. Install Python and Node dependencies
 pip install -e ".[dev]"
 npm install
 
-# 2. Bootstrap DuckDB schema (once)
-make init           # or: python -m db.init
+# 2. Bootstrap DuckDB schema (run once, or after wiping the database)
+make init
 
-# 3. Run ETL pipelines (populates parquets and DuckDB views)
-make pipelines      # runs all nine pipelines in order
-# Or individually:  python -m pipelines.psx.run  etc.
+# Wait for schema verification
+# Expected: "All 22 required objects verified."
 
-# ── In separate terminals ────────────────────────────────────────────────
+# 3. Populate DuckDB — run all nine ETL pipelines
+make pipelines
 
-# Terminal A: FastAPI (read-only DuckDB access)
-make api            # uvicorn on :8000
-
-# Terminal B: Standalone scheduler (pipeline writes, independent lifecycle)
-make scheduler      # python -m scheduler.main
-
-# Terminal C: Next.js (primary UI)
-make dev            # npm run dev on :3000
-
-# Terminal D (optional, dev/debug only): Streamlit
-make streamlit      # streamlit run apps/streamlit_app.py on :8501
+# Verify pipeline output
+python -c "
+import duckdb, config as cfg
+con = duckdb.connect(str(cfg.DB_PATH), read_only=True)
+r = con.execute('SELECT COUNT(*) FROM psx_prices').fetchone()
+print(f'psx_prices rows: {r[0]}')
+con.close()
+"
 ```
-
-### Frontend clients
-
-| Client | URL | Status | Notes |
-|---|---|---|---|
-| **Next.js** | `:3000` | ✅ Primary | SQL editor, KPI cards, view explorer |
-| Streamlit | `:8501` | 🔧 Dev tool | Direct DuckDB access, multi-page |
-| Dash | `:8050` | 🔧 Dev tool | Direct DuckDB access, analytics-focused |
-| Hazard map | `:3001` | 🗺 Geo tool | MapLibre, separate Next.js app |
-
-> Streamlit and Dash are **dev/debug tools** — they demonstrate alternative frontend
-> stacks and are useful for exploratory analysis.  The Next.js client is the primary
-> production UI.  Synthetic data pipelines display a ⚠ disclosure banner in Next.js.
-
----
-
-## Makefile targets
-
-```
-make init        — bootstrap DuckDB schema
-make pipelines   — run all ETL pipelines
-make api         — start FastAPI on :8000
-make scheduler   — start standalone scheduler
-make dev         — start Next.js on :3000
-make streamlit   — start Streamlit on :8501
-make typecheck   — run tsc --noEmit
-make clean       — remove __pycache__, .next, logs
-```
-
----
-
-## Legacy quick start reference
 
 ```bash
-# 3. Run pipelines
-python -m pipelines.psx.run
-python -m pipelines.bsp.run
-python -m pipelines.fx.run
-python -m pipelines.economic.run
-python -m pipelines.regional.run   # synthetic fallback — no data needed
-python -m pipelines.prices.run     # synthetic fallback — no data needed
-python -m pipelines.sentiment.run  # synthetic fallback — no credentials needed
-python -m pipelines.coa.run        # synthetic fallback — no PDFs needed
+# ── Open separate terminals for each process ─────────────────────────────
 
-# 4. Launch Streamlit (analyst view)
-streamlit run apps/streamlit_app.py
+# Terminal A: FastAPI (read-only DuckDB, required for Next.js)
+make api           # → http://localhost:8000
 
-# 5. Launch Dash explorer (optional — power-user / SQL)
-python -m apps.dash_app
+# Verify API health
+curl http://localhost:8000/health
 
-# 6. Launch FastAPI (required for Next.js and hazard map)
-uvicorn api.main:app --reload --port 8000
+# Terminal B: Standalone scheduler (pipeline writes, independent lifecycle)
+make scheduler     # → python -m scheduler.main
 
-# 7. Launch Next.js dashboard (optional)
-cd dashboard && npm ci && npm run dev          # http://localhost:3000
+# Terminal C: Next.js (primary UI)
+make dev           # → http://localhost:3000
 
-# 8. Launch hazard map (optional)
-cd ph-hazard-map && npm ci && npm run dev     # http://localhost:3001
+# Terminal D (optional): Streamlit narrative dashboard
+make streamlit     # → http://localhost:8501
 ```
+
+> ⚠️ **Startup order matters.** `make init` must complete before `api` or `scheduler`. The scheduler must run in a **separate terminal** — embedding it in any frontend process is not supported.
 
 ---
 
-## Presentation clients
+## Service Endpoints
 
-| Client | Port | Data path | Primary use |
-|---|---|---|---|
-| Streamlit | 8501 | DuckDB direct | Analyst / narrative view |
-| Dash | 8050 | DuckDB direct | Power-user explorer + SQL passthrough |
-| Next.js Dashboard | 3000 | FastAPI `/api/v1` | IBM Carbon UI, KPI cards, SQL editor |
-| ph-hazard-map | 3001 | FastAPI `/api/v1/data?format=geojson` | MapLibre GL hazard + vulnerability layers |
+| Service | URL | Notes |
+|---------|-----|-------|
+| Next.js Dashboard | http://localhost:3000 | Primary UI — SQL editor, KPI cards, view explorer |
+| API + Swagger | http://localhost:8000/docs | FastAPI, read-only DuckDB |
+| Streamlit | http://localhost:8501 | 11-page narrative dashboard, DuckDB direct |
+| Dash Explorer | http://localhost:8050 | SQL passthrough, DuckDB direct |
 
 ---
 
-## Repository structure
+## Running the Pipelines
 
-```
-PH-Dashboard/
-├── pipelines/          # Ten E/T/L pipeline modules (uniform interface)
-│   ├── psx/            # PSX OHLCV + RSI + MA signals
-│   ├── bsp/            # Monetary policy rate decisions
-│   ├── fx/             # Exchange rates + volatility
-│   ├── economic/       # GDP, CPI, OFW remittances
-│   ├── labor/          # LFS unemployment (user-supplied CSV)
-│   ├── regional/       # FIES Gini + income quintiles
-│   ├── prices/         # Commodity retail + STL decomposition
-│   ├── sentiment/      # VADER-scored Reddit sentiment
-│   ├── coa/            # COA audit report PDF ingestion
-│   └── geodata/        # GeoRisk hazard layers + province boundaries
-├── api/
-│   ├── main.py         # FastAPI app, CORS, lifespan
-│   ├── routes/         # data.py · health.py
-│   ├── schemas/        # Pydantic request/response models
-│   └── services/       # query_service.py (DuckDB read + TTL cache)
-├── lib/
-│   └── sources/        # Shared HTTP clients (BSP, PSA, World Bank) + ttl_cache.py
-├── db/
-│   ├── schema.sql          # DuckDB DDL (22 REQUIRED_OBJECTS)
-│   ├── schema_geodata.sql  # Geodata DDL
-│   ├── seed_region_crosswalk.sql  # 17 PH regions · PSGC codes
-│   └── init.py             # Idempotent bootstrap + object verification
-├── apps/
-│   ├── streamlit_app.py    # 11-page narrative dashboard
-│   └── dash_app.py         # Explorer + SQL passthrough (Tab 1 · Tab 2)
-├── components/         # Shared Plotly factories, table configs, map helpers
-├── scheduler/
-│   └── cron_jobs.py    # APScheduler job registry (background thread)
-├── ph-hazard-map/      # Next.js 15 + MapLibre GL (port 3001)
-├── img/
-│   └── architecture.svg   # System architecture diagram
-├── data/
-│   ├── raw/            # Unprocessed source files (gitignored)
-│   ├── processed/      # Parquet files (gitignored)
-│   └── cache/          # TTL-managed fetch cache (gitignored)
-├── .github/workflows/ci.yml  # Lint · pytest · db smoke · Next.js build
-├── docker-compose.yml
-└── config.py           # Paths, TTLs, pipeline constants
+```bash
+# Run all pipelines via Makefile
+make pipelines
+
+# Or run each individually
+python -m pipelines.psx.run        # PSX OHLCV + RSI/MA signals
+python -m pipelines.bsp.run        # BSP monetary policy rates
+python -m pipelines.fx.run         # FX rates + volatility
+python -m pipelines.economic.run   # GDP, CPI, OFW remittances (static — run quarterly)
+python -m pipelines.labor.run      # LFS labor market (requires manual CSV)
+python -m pipelines.regional.run   # FIES regional inequality (synthetic fallback)
+python -m pipelines.prices.run     # Commodity retail + DOE fuel (synthetic fallback)
+python -m pipelines.sentiment.run  # Reddit VADER sentiment (synthetic fallback)
+python -m pipelines.coa.run        # COA audit reports (synthetic fallback)
+
+# Verify view registration
+python -c "
+import duckdb, config as cfg
+con = duckdb.connect(str(cfg.DB_PATH), read_only=True)
+views = con.execute(\"SELECT table_name FROM information_schema.tables WHERE table_type = 'VIEW'\").fetchall()
+print(f'{len(views)} views registered:', [v[0] for v in views])
+con.close()
+"
+
+# Check pipeline run log
+python -c "
+import duckdb, config as cfg
+con = duckdb.connect(str(cfg.DB_PATH), read_only=True)
+rows = con.execute('SELECT pipeline, status, run_at FROM pipeline_runs ORDER BY run_at DESC LIMIT 10').fetchall()
+for r in rows: print(r)
+con.close()
+"
+
+# Activate the Prefect monthly schedule (runs 1st of each month, 06:00 PST)
+python -m scheduler.main
 ```
 
 Every pipeline exposes the same four-function contract:
 
 ```python
 def extract() -> None: ...   # writes to data/raw/
-def transform() -> None: ... # writes parquet to data/processed/
+def transform() -> None: ... # writes Parquet to data/processed/
 def load() -> None: ...      # registers DuckDB view
 def run() -> None:
     extract(); transform(); load()
@@ -206,115 +194,161 @@ def run() -> None:
 
 ---
 
-## DuckDB views (17)
+## API Reference
 
-```
-psx_prices             bsp_policy_rates       stg_fx_rates
-cpi_trend              lfs_labor_force        fies_regional
-commodity_prices       food_price_decomp      social_sentiment
-coa_budget_util        regional_map           road_quality_by_province
-provincial_vulnerability_index                hazard_overlap_by_province
-psx_vs_bsp             real_exchange_rate     sentiment_vs_psx
-```
-
-Cross-pipeline joins use DuckDB `ASOF JOIN` on date columns. TTL cache at
-`lib/sources/ttl_cache.py` guards re-fetch with `threading.Lock` + mtime-based
-invalidation.
-
----
-
-## Scheduled pipelines
-
-Set `PH_SCHEDULER_ENABLED=true` before launching Streamlit to activate
-the APScheduler background thread (Philippine Standard Time, UTC+8):
-
-| Pipeline | Trigger | Schedule |
-|---|---|---|
-| PSX | daily cron | 18:30 PST |
-| FX | daily cron | 09:00 PST |
-| BSP | monthly cron | 1st of month, 08:00 PST |
-| Prices | interval | every 6 h |
-| Sentiment | interval | every 4 h |
-| Geodata | monthly cron | 1st of month, 03:00 PST |
-
-Static pipelines (run manually per release cycle):
-`economic`, `labor`, `regional`, `coa`
-
----
-
-## FastAPI endpoints
-
-Base URL: `http://localhost:8000/api/v1`
+All endpoints are read-only. Base URL: `http://localhost:8000`
 
 | Method | Path | Description |
-|---|---|---|
-| GET | `/data?view=<name>&format=geojson` | View data · 1h TTL cache · GeoJSON mode for map clients |
-| GET | `/views` | List all registered DuckDB views |
-| GET | `/query` | Arbitrary read-only DuckDB SQL |
-| GET | `/kpi` | Aggregated KPI summary payload |
-| GET | `/health` | Liveness — always 200 |
-| GET | `/health/ready` | Readiness — DuckDB + pipeline_runs check · 503 on fail |
-
-All responses carry `X-PH-Synthetic-Data` header indicating whether the
-underlying data is real or synthetic fallback.
+|--------|------|-------------|
+| `GET` | `/health` | Liveness probe — always `{"status": "ok"}` |
+| `GET` | `/views` | All registered DuckDB views with column metadata |
+| `GET` | `/views/meta` | View list + axis hints for the Next.js frontend |
+| `GET` | `/data?view=<name>` | Fetch rows from a named view — optional `date_col`, `start`, `end`, `limit` |
+| `POST` | `/query` | Execute a validated `SELECT` statement — max 10,000 rows |
+| `GET` | `/kpi/{view}` | Four summary KPI stats (Latest, Maximum, Minimum, Average) via native DuckDB `MAX_BY` |
+| `GET` | `/status` | Per-pipeline last run time, status, and synthetic-data disclosure |
 
 ---
 
-## SQL passthrough panel
+## Configuration
 
-The Dash explorer at `http://127.0.0.1:8050` (Tab 2) includes a live SQL editor
-connected to the local DuckDB. Cross-domain queries run against all pipeline
-views simultaneously:
+### `config.py` — key overrides
 
-```sql
--- PSX close vs BSP rate vs CPI — monthly aligned
-SELECT
-    DATE_TRUNC('month', p.date)::DATE  AS month,
-    AVG(p.close)                       AS avg_psei,
-    b.overnight_rp                     AS bsp_rate,
-    c.inflation_pct
-FROM psx_prices p
-LEFT JOIN bsp_policy_rate b
-    ON DATE_TRUNC('month', p.date) =
-       DATE_TRUNC('month', b.decision_date)
-LEFT JOIN cpi_trend c
-    ON DATE_TRUNC('month', p.date) = c.period_date
-WHERE p.ticker = 'PSEi.PS'
-GROUP BY 1, b.overnight_rp, c.inflation_pct
-ORDER BY 1;
+All pipeline paths, TTLs, and optional data source paths are centralised in `config.py`. Import `cfg` anywhere — never hard-code paths.
+
+```python
+# Enable real labor data (PSA LFS)
+LABOR_LFS_CSV: Optional[Path] = Path("data/raw/labor/lfs.csv")
+
+# Enable real regional data (PSA FIES)
+REGIONAL_DATA_DIR: Optional[Path] = Path("data/raw/regional/")
+
+# Enable real prices (PSA Price Situationer + DOE)
+PRICES_PSA_CSV: Optional[Path] = Path("data/raw/prices/psa_prices.csv")
+PRICES_DOE_CSV: Optional[Path] = Path("data/raw/prices/doe_fuel.csv")
+
+# Enable live sentiment (Reddit API)
+# Set via environment variable — do not put credentials in config.py
+# export REDDIT_CLIENT_ID=...
+# export REDDIT_CLIENT_SECRET=...
+# export REDDIT_USER_AGENT=...
+
+# Enable COA budget data (PDF ingestion)
+COA_PDF_DIR: Optional[Path] = Path("data/raw/coa/")
+```
+
+### `.env.local` — Next.js frontend
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:8000   # empty = defaults to localhost:8000
 ```
 
 ---
 
-## Data gaps and fallbacks
+## Data Gaps and Fallbacks
 
-| Pipeline | Fallback | To activate real data |
-|---|---|---|
-| Labor | Empty schema (zero rows) | Download PSA LFS CSV, set `cfg.LABOR_LFS_CSV` |
-| Regional | Synthetic FIES (PSA-anchored) | Download FIES CSVs, set `cfg.REGIONAL_DATA_DIR` |
-| Prices | Synthetic PSA/DOE (anchored) | Download bulletins, set `cfg.PRICES_PSA_CSV` / `cfg.PRICES_DOE_CSV` |
-| Sentiment | Synthetic 90-day trailing | Set `REDDIT_CLIENT_ID` + credentials in `.env` |
-| COA | Synthetic FY2019–2023 | Download PDFs, set `cfg.COA_PDF_DIR` |
-| Geodata | Seed GeoJSON cold-start render | `git add -f` seed files before push |
+Quality rules and synthetic fallback behaviour are defined per-pipeline. All pipelines complete without error in fallback mode. The Next.js frontend renders a ⚠ disclosure banner on any view backed by a synthetic pipeline.
 
-All pipelines complete without error in fallback mode. The Status page
-(`📊 Status`) reflects actual row count and source for each domain.
+| Pipeline | Default | Fallback behaviour | To activate real data |
+|----------|---------|--------------------|-----------------------|
+| PSX | ✅ Live | — | yfinance (always live) |
+| BSP | ✅ Live | — | BSP HTML scrape (always live) |
+| FX | ✅ Live | — | BSP RERB + Frankfurter (always live) |
+| Economic | ✅ Live | — | PSA OpenSTAT + World Bank API |
+| Labor | ⚠ Empty schema | Zero-row `labor_market` view | Download [PSA LFS](https://psa.gov.ph/content/labor-force-survey-lfs), set `cfg.LABOR_LFS_CSV` |
+| Regional | ⚠ Synthetic | PSA-anchored FIES (seeded) | Download [FIES CSVs](https://psa.gov.ph/statistics/income-expenditure), set `cfg.REGIONAL_DATA_DIR` |
+| Prices | ⚠ Synthetic | PSA/DOE anchored (seeded) | Download [Price Situationer](https://psa.gov.ph/statistics/price-situationer) + [DOE bulletin](https://www.doe.gov.ph/weekly-retail-pump-prices), set `cfg.PRICES_PSA_CSV` / `cfg.PRICES_DOE_CSV` |
+| Sentiment | ⚠ Synthetic | 90-day trailing VADER scores | Register [Reddit app](https://www.reddit.com/prefs/apps), set `REDDIT_CLIENT_ID` env var |
+| COA | ⚠ Synthetic | FY2019–2023, 15 agencies | Download [COA AAR PDFs](https://www.coa.gov.ph/index.php/reports/annual-audit-reports), set `cfg.COA_PDF_DIR` |
 
 ---
 
-## Key dependencies
+## Development
 
-```
-duckdb          pandas          pyarrow
-streamlit       dash            dash-bootstrap-components
-plotly          apscheduler
-fastapi         uvicorn         httpx
-beautifulsoup4  pdfplumber
-vaderSentiment  statsmodels     yfinance
-structlog       geopandas       shapely
+### Backend (no Docker)
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+make init
+uvicorn api.main:app --reload --port 8000
 ```
 
-See `requirements.txt` for pinned versions.
+### Frontend (no Docker)
+
+```bash
+npm install
+npm run dev   # http://localhost:3000
+```
+
+### Tests
+
+```bash
+# Unit tests — no infrastructure needed
+pytest tests/unit/ -v
+
+# Full suite — needs DuckDB bootstrapped (make init)
+pytest tests/ -v
+
+# Type-check the Next.js frontend
+make typecheck   # npx tsc --noEmit
+```
+
+### Lint
+
+```bash
+ruff check . && black --check .
+```
+
+---
+
+## Scheduled Pipelines
+
+The scheduler runs as a standalone process (`make scheduler`) in Philippine Standard Time (UTC+8). A heartbeat file at `db/scheduler.heartbeat` is written every 60 seconds; the Streamlit Status page and the `/status` API endpoint read its mtime to detect a dead scheduler.
+
+| Pipeline | Trigger | Schedule (PST) | Rationale |
+|----------|---------|----------------|-----------|
+| PSX | daily cron | 18:30 | PSE closes 15:30; yfinance cache settles ~3 h later |
+| FX | daily cron | 09:00 | BSP publishes morning reference rates |
+| BSP | monthly cron | 1st, 08:00 | Policy decisions are monthly |
+| Prices | interval | every 6 h | DA/NFA bulletins update intra-day |
+| Sentiment | interval | every 4 h | Reddit API rate limits constrain shorter cadence |
+
+Static pipelines — run manually after each data release:
+`economic` · `labor` · `regional` · `coa`
+
+---
+
+## Failure Modes
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `RuntimeError: Schema bootstrap incomplete` | `make init` not run, or schema.sql DDL error | Run `make init`; check `db/schema.sql` for syntax errors |
+| `IOException: Could not open database` | Second process opened a read-write connection | Only pipeline `load.py` files use `get_write_conn()`; all app code must use `get_read_conn()` |
+| Next.js chart blank, no errors | API not running or pipelines never executed | Start `make api`, then run `make pipelines` |
+| `GET /data` returns 404 for a view | View name not in `ALLOWED_VIEWS` | Add to `db/init.py::REQUIRED_OBJECTS` and `lib/views.py::VIEW_AXIS_HINTS` |
+| Scheduler jobs not firing | `make scheduler` not started, or duplicate registration | Start scheduler in a **separate terminal**; module-level `_scheduler` guard prevents re-registration |
+| `HardQualityFailure` from lakehouse adapter | >5% rows failed lakehouse quality checks | Check `/datasets/{name}/quality` on the lakehouse, or fall back to embedded pipelines |
+| Streamlit ⚠ banner on all views | Scheduler not running or pipelines not executed | Run `make pipelines`, then start `make scheduler` |
+| `REDDIT_CLIENT_ID missing` — sentiment synthetic | Reddit credentials not set | Set `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` in environment |
+| `UnsupportedClassVersionError` (Spark interop) | Java < 17 if using lakehouse locally | Install Java 17, set `JAVA_HOME` |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Orchestration | APScheduler 3.x — standalone background process |
+| Storage | DuckDB 0.10+ · Apache Parquet · PyArrow 14 |
+| Data transforms | pandas · statsmodels (STL) · vaderSentiment |
+| Ingestion | yfinance · httpx · BeautifulSoup4 · praw · pdfplumber |
+| API | FastAPI 0.111 · uvicorn · Pydantic v2 |
+| Python frontends | Streamlit 1.35+ · Dash + dash-bootstrap-components · Plotly |
+| Primary UI | Next.js 15 · React 18 · TypeScript 5 · Tailwind CSS v4 |
+| UI components | shadcn/ui · Radix UI · Recharts · lucide-react |
+| Build | Vite 5 (dashboard) · npm / pnpm |
+| Testing | pytest · ruff · black · tsc |
 
 ---
 
