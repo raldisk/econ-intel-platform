@@ -1,0 +1,419 @@
+<svg viewBox="0 0 1200 860" xmlns="http://www.w3.org/2000/svg" font-family="'Courier New', Courier, monospace">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <!-- Panel gradients by domain -->
+    <linearGradient id="src-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1f3a5f"/>
+      <stop offset="100%" stop-color="#152a45"/>
+    </linearGradient>
+    <linearGradient id="pipe-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2e1a"/>
+      <stop offset="100%" stop-color="#102010"/>
+    </linearGradient>
+    <linearGradient id="db-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2a00"/>
+      <stop offset="100%" stop-color="#241a00"/>
+    </linearGradient>
+    <linearGradient id="app-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1a3a"/>
+      <stop offset="100%" stop-color="#1a0e2a"/>
+    </linearGradient>
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4a9eff" opacity="0.7"/>
+    </marker>
+    <marker id="arrow-sched" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#9b59b6" opacity="0.8"/>
+    </marker>
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-strong">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="860" fill="url(#bg)" rx="0"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.04" stroke="#4a9eff" stroke-width="0.5">
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="260" x2="1200" y2="260"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="600" x2="1200" y2="600"/>
+    <line x1="0" y1="760" x2="1200" y2="760"/>
+    <line x1="100" y1="0" x2="100" y2="860"/>
+    <line x1="600" y1="0" x2="600" y2="860"/>
+    <line x1="1100" y1="0" x2="1100" y2="860"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ TITLE -->
+  <text x="600" y="36" text-anchor="middle" fill="#e6edf3" font-size="18" font-weight="700" letter-spacing="2">PH ECONOMIC INTELLIGENCE DASHBOARD</text>
+  <text x="600" y="56" text-anchor="middle" fill="#4a9eff" font-size="11" letter-spacing="4">SYSTEM ARCHITECTURE · DuckDB · Streamlit · Dash · APScheduler</text>
+  <line x1="80" y1="66" x2="1120" y2="66" stroke="#4a9eff" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- ═══════════════════════════════════════════════════════════ LAYER 1: SOURCES -->
+  <text x="20" y="98" fill="#4a9eff" font-size="9" letter-spacing="3" opacity="0.8">LAYER 1 · DATA SOURCES</text>
+  <rect x="16" y="104" width="1168" height="118" rx="6" fill="url(#src-grad)" stroke="#1f6feb" stroke-width="1" opacity="0.9"/>
+
+  <!-- Source boxes: 9 items in a row -->
+  <!-- Box dimensions: ~118px wide, 84px tall, gap 12px, start x=28 -->
+  <g font-size="9" fill="#8b949e">
+    <!-- PSX -->
+    <rect x="28" y="116" width="116" height="96" rx="4" fill="#0d2137" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="86" y="136" text-anchor="middle" fill="#4a9eff" font-size="11" font-weight="700">PSX</text>
+    <text x="86" y="152" text-anchor="middle">yfinance API</text>
+    <text x="86" y="164" text-anchor="middle" fill="#3fb950">daily · JSON</text>
+    <text x="86" y="178" text-anchor="middle" fill="#6e7681">OHLCV + signals</text>
+    <text x="86" y="192" text-anchor="middle" fill="#6e7681">RSI · MA20/50</text>
+    <text x="86" y="204" text-anchor="middle" fill="#4a9eff" font-size="8">18:30 PST</text>
+
+    <!-- BSP -->
+    <rect x="156" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="214" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">BSP</text>
+    <text x="214" y="152" text-anchor="middle">BSP bulletins</text>
+    <text x="214" y="164" text-anchor="middle" fill="#3fb950">monthly · HTML</text>
+    <text x="214" y="178" text-anchor="middle" fill="#6e7681">Policy rate</text>
+    <text x="214" y="192" text-anchor="middle" fill="#6e7681">Decision dates</text>
+    <text x="214" y="204" text-anchor="middle" fill="#4a9eff" font-size="8">1st monthly</text>
+
+    <!-- FX -->
+    <rect x="284" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="342" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">FX RATES</text>
+    <text x="342" y="152" text-anchor="middle">BSP ref rates</text>
+    <text x="342" y="164" text-anchor="middle" fill="#3fb950">daily · CSV+HTML</text>
+    <text x="342" y="178" text-anchor="middle" fill="#6e7681">USD/PHP + cross</text>
+    <text x="342" y="192" text-anchor="middle" fill="#6e7681">Frankfurter fallback</text>
+    <text x="342" y="204" text-anchor="middle" fill="#4a9eff" font-size="8">09:00 PST</text>
+
+    <!-- Economic -->
+    <rect x="412" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="470" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">ECONOMIC</text>
+    <text x="470" y="152" text-anchor="middle">PSA OpenSTAT</text>
+    <text x="470" y="164" text-anchor="middle" fill="#3fb950">quarterly · JSON</text>
+    <text x="470" y="178" text-anchor="middle" fill="#6e7681">CPI · GDP</text>
+    <text x="470" y="192" text-anchor="middle" fill="#6e7681">World Bank API</text>
+    <text x="470" y="204" text-anchor="middle" fill="#f0883e" font-size="8">manual</text>
+
+    <!-- Labor -->
+    <rect x="540" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="598" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">LABOR</text>
+    <text x="598" y="152" text-anchor="middle">PSA LFS</text>
+    <text x="598" y="164" text-anchor="middle" fill="#f0883e">manual · CSV</text>
+    <text x="598" y="178" text-anchor="middle" fill="#6e7681">Unemployment</text>
+    <text x="598" y="192" text-anchor="middle" fill="#6e7681">by region/round</text>
+    <text x="598" y="204" text-anchor="middle" fill="#f0883e" font-size="8">user-supplied</text>
+
+    <!-- Regional -->
+    <rect x="668" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="726" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">REGIONAL</text>
+    <text x="726" y="152" text-anchor="middle">PSA FIES</text>
+    <text x="726" y="164" text-anchor="middle" fill="#f0883e">survey · CSV</text>
+    <text x="726" y="178" text-anchor="middle" fill="#6e7681">FIES 2021/23</text>
+    <text x="726" y="192" text-anchor="middle" fill="#6e7681">synthetic fallback</text>
+    <text x="726" y="204" text-anchor="middle" fill="#f0883e" font-size="8">per survey cycle</text>
+
+    <!-- Prices -->
+    <rect x="796" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="854" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">PRICES</text>
+    <text x="854" y="152" text-anchor="middle">PSA + DOE</text>
+    <text x="854" y="164" text-anchor="middle" fill="#3fb950">6h · CSV/scrape</text>
+    <text x="854" y="178" text-anchor="middle" fill="#6e7681">12 commodities</text>
+    <text x="854" y="192" text-anchor="middle" fill="#6e7681">fuel weekly</text>
+    <text x="854" y="204" text-anchor="middle" fill="#4a9eff" font-size="8">every 6h</text>
+
+    <!-- Sentiment -->
+    <rect x="924" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="982" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">SENTIMENT</text>
+    <text x="982" y="152" text-anchor="middle">Reddit/Twitter</text>
+    <text x="982" y="164" text-anchor="middle" fill="#3fb950">4h · API+VADER</text>
+    <text x="982" y="178" text-anchor="middle" fill="#6e7681">6 PH topics</text>
+    <text x="982" y="192" text-anchor="middle" fill="#6e7681">synthetic fallback</text>
+    <text x="982" y="204" text-anchor="middle" fill="#4a9eff" font-size="8">every 4h</text>
+
+    <!-- COA -->
+    <rect x="1052" y="116" width="116" height="96" rx="4" fill="#0d1f2d" stroke="#1f6feb" stroke-width="0.8"/>
+    <text x="1110" y="136" text-anchor="middle" fill="#79c0ff" font-size="11" font-weight="700">COA</text>
+    <text x="1110" y="152" text-anchor="middle">COA reports</text>
+    <text x="1110" y="164" text-anchor="middle" fill="#f0883e">annual · PDF</text>
+    <text x="1110" y="178" text-anchor="middle" fill="#6e7681">15 agencies</text>
+    <text x="1110" y="192" text-anchor="middle" fill="#6e7681">LGU outliers</text>
+    <text x="1110" y="204" text-anchor="middle" fill="#f0883e" font-size="8">per audit cycle</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ ARROWS: Sources → Pipelines -->
+  <g stroke="#4a9eff" stroke-width="1" opacity="0.35" marker-end="url(#arrow)" fill="none">
+    <line x1="86"   y1="212" x2="86"   y2="282"/>
+    <line x1="214"  y1="212" x2="214"  y2="282"/>
+    <line x1="342"  y1="212" x2="342"  y2="282"/>
+    <line x1="470"  y1="212" x2="470"  y2="282"/>
+    <line x1="598"  y1="212" x2="598"  y2="282"/>
+    <line x1="726"  y1="212" x2="726"  y2="282"/>
+    <line x1="854"  y1="212" x2="854"  y2="282"/>
+    <line x1="982"  y1="212" x2="982"  y2="282"/>
+    <line x1="1110" y1="212" x2="1110" y2="282"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ LAYER 2: PIPELINES -->
+  <text x="20" y="272" fill="#3fb950" font-size="9" letter-spacing="3" opacity="0.8">LAYER 2 · E/T/L PIPELINES  ·  extract() → transform() → load()</text>
+  <rect x="16" y="278" width="1168" height="106" rx="6" fill="url(#pipe-grad)" stroke="#238636" stroke-width="1" opacity="0.9"/>
+
+  <g font-size="9" fill="#8b949e">
+    <!-- Pipeline boxes — same 9 columns -->
+    <!-- psx -->
+    <rect x="28" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="86" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">psx/</text>
+    <text x="86" y="322" text-anchor="middle">extract.py</text>
+    <text x="86" y="334" text-anchor="middle">transform.py</text>
+    <text x="86" y="346" text-anchor="middle">load.py</text>
+    <text x="86" y="360" text-anchor="middle" fill="#3fb950">→ psx_prices</text>
+
+    <!-- bsp -->
+    <rect x="156" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="214" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">bsp/</text>
+    <text x="214" y="322" text-anchor="middle">lib/sources/bsp</text>
+    <text x="214" y="334" text-anchor="middle">→ parquet</text>
+    <text x="214" y="346" text-anchor="middle">→ DuckDB view</text>
+    <text x="214" y="360" text-anchor="middle" fill="#3fb950">→ bsp_policy_rate</text>
+
+    <!-- fx -->
+    <rect x="284" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="342" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">fx/</text>
+    <text x="342" y="322" text-anchor="middle">BS4 HTML parse</text>
+    <text x="342" y="334" text-anchor="middle">forward-fill</text>
+    <text x="342" y="346" text-anchor="middle">volatility views</text>
+    <text x="342" y="360" text-anchor="middle" fill="#3fb950">→ fx_rates</text>
+
+    <!-- economic -->
+    <rect x="412" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="470" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">economic/</text>
+    <text x="470" y="322" text-anchor="middle">dbt mart ports</text>
+    <text x="470" y="334" text-anchor="middle">pandas compute</text>
+    <text x="470" y="346" text-anchor="middle">worldbank.py</text>
+    <text x="470" y="360" text-anchor="middle" fill="#3fb950">→ gdp/cpi/remit</text>
+
+    <!-- labor -->
+    <rect x="540" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="598" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">labor/</text>
+    <text x="598" y="322" text-anchor="middle">CSV gate</text>
+    <text x="598" y="334" text-anchor="middle">gap.txt fallback</text>
+    <text x="598" y="346" text-anchor="middle">0-row view OK</text>
+    <text x="598" y="360" text-anchor="middle" fill="#3fb950">→ labor_market</text>
+
+    <!-- regional -->
+    <rect x="668" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="726" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">regional/</text>
+    <text x="726" y="322" text-anchor="middle">Lorenz-Gini</text>
+    <text x="726" y="334" text-anchor="middle">FIES synthetic</text>
+    <text x="726" y="346" text-anchor="middle">quintile shares</text>
+    <text x="726" y="360" text-anchor="middle" fill="#3fb950">→ reg_inequality</text>
+
+    <!-- prices -->
+    <rect x="796" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="854" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">prices/</text>
+    <text x="854" y="322" text-anchor="middle">STL decomp</text>
+    <text x="854" y="334" text-anchor="middle">period=12</text>
+    <text x="854" y="346" text-anchor="middle">shock events</text>
+    <text x="854" y="360" text-anchor="middle" fill="#3fb950">→ commodity/food</text>
+
+    <!-- sentiment -->
+    <rect x="924" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="982" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">sentiment/</text>
+    <text x="982" y="322" text-anchor="middle">VADER-only</text>
+    <text x="982" y="334" text-anchor="middle">praw optional</text>
+    <text x="982" y="346" text-anchor="middle">90d synthetic</text>
+    <text x="982" y="360" text-anchor="middle" fill="#3fb950">→ social_sentiment</text>
+
+    <!-- coa -->
+    <rect x="1052" y="290" width="116" height="82" rx="4" fill="#0d1f12" stroke="#238636" stroke-width="0.8"/>
+    <text x="1110" y="308" text-anchor="middle" fill="#3fb950" font-size="10" font-weight="700">coa/</text>
+    <text x="1110" y="322" text-anchor="middle">pdfplumber</text>
+    <text x="1110" y="334" text-anchor="middle">outlier z-score</text>
+    <text x="1110" y="346" text-anchor="middle">15 agencies</text>
+    <text x="1110" y="360" text-anchor="middle" fill="#3fb950">→ coa_budget</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ ARROWS: Pipelines → Storage -->
+  <g stroke="#3fb950" stroke-width="1" opacity="0.35" marker-end="url(#arrow)" fill="none">
+    <line x1="86"   y1="372" x2="86"   y2="440"/>
+    <line x1="214"  y1="372" x2="214"  y2="440"/>
+    <line x1="342"  y1="372" x2="342"  y2="440"/>
+    <line x1="470"  y1="372" x2="470"  y2="440"/>
+    <line x1="598"  y1="372" x2="598"  y2="440"/>
+    <line x1="726"  y1="372" x2="726"  y2="440"/>
+    <line x1="854"  y1="372" x2="854"  y2="440"/>
+    <line x1="982"  y1="372" x2="982"  y2="440"/>
+    <line x1="1110" y1="372" x2="1110" y2="440"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ LAYER 3: STORAGE -->
+  <text x="20" y="430" fill="#d29922" font-size="9" letter-spacing="3" opacity="0.8">LAYER 3 · STORAGE  ·  DuckDB + Parquet</text>
+  <rect x="16" y="436" width="1168" height="120" rx="6" fill="url(#db-grad)" stroke="#9e6a03" stroke-width="1" opacity="0.9"/>
+
+  <!-- DuckDB main box -->
+  <rect x="28" y="450" width="220" height="94" rx="6" fill="#1c1400" stroke="#d29922" stroke-width="1.5"/>
+  <text x="138" y="472" text-anchor="middle" fill="#d29922" font-size="13" font-weight="700" filter="url(#glow)">duckdb_local.db</text>
+  <text x="138" y="490" text-anchor="middle" fill="#8b949e" font-size="9">db/schema.sql — DDL bootstrap</text>
+  <text x="138" y="504" text-anchor="middle" fill="#8b949e" font-size="9">db/init.py — REQUIRED_OBJECTS=22</text>
+  <text x="138" y="518" text-anchor="middle" fill="#8b949e" font-size="9">lib/db.py — get_read_conn / get_write_conn</text>
+  <text x="138" y="532" text-anchor="middle" fill="#d29922" font-size="9">pipeline_runs — execution log</text>
+
+  <!-- Parquet files column labels -->
+  <g font-size="8" fill="#8b949e">
+    <text x="278" y="460" fill="#d29922" font-size="10" font-weight="700">PARQUET</text>
+    <text x="278" y="474">psx_prices.parquet</text>
+    <text x="278" y="486">bsp_policy_rate.parquet</text>
+    <text x="278" y="498">fx_rates.parquet</text>
+    <text x="278" y="510">cpi_trend.parquet</text>
+    <text x="278" y="522">gdp_tracker.parquet</text>
+    <text x="278" y="534">remittance_trend.parquet</text>
+
+    <text x="430" y="460" fill="#d29922" font-size="10" font-weight="700">PARQUET (cont.)</text>
+    <text x="430" y="474">labor_market.parquet</text>
+    <text x="430" y="486">regional_inequality.parquet</text>
+    <text x="430" y="498">commodity_prices.parquet</text>
+    <text x="430" y="510">food_price_decomp.parquet</text>
+    <text x="430" y="522">social_sentiment.parquet</text>
+    <text x="430" y="534">coa_budget_util.parquet</text>
+
+    <text x="600" y="460" fill="#d29922" font-size="10" font-weight="700">DUCKDB VIEWS</text>
+    <text x="600" y="474">stg_fx_rates · fx_volatility</text>
+    <text x="600" y="486">real_exchange_rate · cpi_vs_fx</text>
+    <text x="600" y="498">price_trend_by_commodity</text>
+    <text x="600" y="510">seasonal_price_index</text>
+    <text x="600" y="522">sentiment_vs_psx · heatmap</text>
+    <text x="600" y="534">coa_low_utilizers · trend</text>
+
+    <text x="780" y="460" fill="#d29922" font-size="10" font-weight="700">CROSS-PIPELINE</text>
+    <text x="780" y="474">psx_vs_bsp — ASOF JOIN</text>
+    <text x="780" y="486">real_exchange_rate</text>
+    <text x="780" y="498">  ← cpi_trend × stg_fx_rates</text>
+    <text x="780" y="510">cpi_vs_fx</text>
+    <text x="780" y="522">sentiment_vs_psx</text>
+    <text x="780" y="534">  ← social_sentiment × psx_prices</text>
+
+    <!-- TTL cache -->
+    <rect x="1000" y="450" width="168" height="94" rx="4" fill="#1c1400" stroke="#9e6a03" stroke-width="0.8"/>
+    <text x="1084" y="468" text-anchor="middle" fill="#d29922" font-size="10" font-weight="700">TTL CACHE</text>
+    <text x="1084" y="482" text-anchor="middle">lib/sources/ttl_cache.py</text>
+    <text x="1084" y="494" text-anchor="middle">mtime-based invalidation</text>
+    <text x="1084" y="506" text-anchor="middle">threading.Lock atomic</text>
+    <text x="1084" y="518" text-anchor="middle">prices · sentiment</text>
+    <text x="1084" y="532" text-anchor="middle" fill="#4a9eff">TTL_PRICES = 6h</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ ARROWS: Storage → Apps -->
+  <g stroke="#d29922" stroke-width="1" opacity="0.4" marker-end="url(#arrow)" fill="none">
+    <line x1="400" y1="556" x2="310" y2="630"/>
+    <line x1="700" y1="556" x2="870" y2="630"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ SCHEDULER (side panel) -->
+  <text x="20" y="595" fill="#9b59b6" font-size="9" letter-spacing="3" opacity="0.8">SCHEDULER</text>
+  <rect x="16" y="601" width="220" height="150" rx="6" fill="#110d1a" stroke="#6e40c9" stroke-width="1" opacity="0.95"/>
+  <text x="126" y="622" text-anchor="middle" fill="#9b59b6" font-size="11" font-weight="700">APScheduler</text>
+  <text x="126" y="636" text-anchor="middle" fill="#8b949e" font-size="8">BackgroundScheduler · Asia/Manila</text>
+  <text x="126" y="648" text-anchor="middle" fill="#8b949e" font-size="8">PH_SCHEDULER_ENABLED=true</text>
+  <line x1="28" y1="654" x2="224" y2="654" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+  <g font-size="8" fill="#8b949e">
+    <text x="36" y="668">PSX      cron  18:30 PST daily</text>
+    <text x="36" y="681">FX       cron  09:00 PST daily</text>
+    <text x="36" y="694">BSP      cron  1st/mo 08:00 PST</text>
+    <text x="36" y="707">prices   interval  6h</text>
+    <text x="36" y="720">sentiment interval 4h</text>
+    <line x1="28" y1="728" x2="224" y2="728" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+    <text x="36" y="742" fill="#6e40c9">static: economic labor regional coa</text>
+  </g>
+
+  <!-- Scheduler → pipeline arrows -->
+  <g stroke="#9b59b6" stroke-width="1" opacity="0.5" stroke-dasharray="4 2" marker-end="url(#arrow-sched)" fill="none">
+    <line x1="126" y1="370" x2="126" y2="436"/>
+    <!-- Actually point from scheduler to pipeline layer -->
+    <path d="M 126 601 Q 126 480 300 390"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ LAYER 4: APPS -->
+  <text x="254" y="620" fill="#a371f7" font-size="9" letter-spacing="3" opacity="0.8">LAYER 4 · APPLICATION</text>
+
+  <!-- Streamlit -->
+  <rect x="254" y="626" width="480" height="210" rx="6" fill="url(#app-grad)" stroke="#6e40c9" stroke-width="1" opacity="0.95"/>
+  <text x="494" y="648" text-anchor="middle" fill="#a371f7" font-size="13" font-weight="700">streamlit_app.py</text>
+  <text x="494" y="664" text-anchor="middle" fill="#8b949e" font-size="9">Narrative / Analyst view · 11 pages · @st.cache_data(ttl=60)</text>
+  <line x1="266" y1="670" x2="722" y2="670" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+
+  <g font-size="8" fill="#8b949e">
+    <!-- 3-column page list -->
+    <text x="278" y="686" fill="#a371f7">📊</text><text x="290" y="686">Status — pipeline health</text>
+    <text x="278" y="700" fill="#a371f7">📈</text><text x="290" y="700">Markets — candlestick+MA+RSI</text>
+    <text x="278" y="714" fill="#a371f7">🏦</text><text x="290" y="714">Monetary Policy — rate+CPI</text>
+    <text x="278" y="728" fill="#a371f7">💱</text><text x="290" y="728">FX — rates+vol+cross</text>
+
+    <text x="410" y="686" fill="#a371f7">👷</text><text x="422" y="686">Labor — regional map</text>
+    <text x="410" y="700" fill="#a371f7">🛒</text><text x="422" y="700">Prices — STL+fuel</text>
+    <text x="410" y="714" fill="#a371f7">🗺️</text><text x="422" y="714">Regional — Gini+quintiles</text>
+    <text x="410" y="728" fill="#a371f7">📉</text><text x="422" y="728">Economy — GDP+CPI+remit</text>
+
+    <text x="540" y="686" fill="#a371f7">💬</text><text x="552" y="686">Sentiment — topic trend</text>
+    <text x="540" y="700" fill="#a371f7">🏛️</text><text x="552" y="700">Budget — COA utilization</text>
+    <text x="540" y="714" fill="#a371f7">🔀</text><text x="552" y="714">Cross-Analysis — dual-axis</text>
+  </g>
+
+  <line x1="266" y1="736" x2="722" y2="736" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+  <g font-size="8" fill="#6e7681">
+    <text x="278" y="750">components/charts.py — COLORS palette · line · bar · area · dual_axis · candlestick · scatter</text>
+    <text x="278" y="763">components/maps.py  — ph_choropleth (GeoJSON or bar fallback) · PSA region order</text>
+    <text x="278" y="776">components/tables.py — psx_table · bsp_table · fx_table · prices_table · download_csv</text>
+    <text x="278" y="793" fill="#4a9eff">http://localhost:8501</text>
+    <text x="430" y="793" fill="#6e40c9">PH_SCHEDULER_ENABLED=true → APScheduler thread</text>
+  </g>
+
+  <!-- Dash -->
+  <rect x="750" y="626" width="430" height="210" rx="6" fill="url(#app-grad)" stroke="#6e40c9" stroke-width="1" opacity="0.95"/>
+  <text x="965" y="648" text-anchor="middle" fill="#a371f7" font-size="13" font-weight="700">dash_app.py</text>
+  <text x="965" y="664" text-anchor="middle" fill="#8b949e" font-size="9">Power-user / Engineer view · Dash Bootstrap Components</text>
+  <line x1="762" y1="670" x2="1168" y2="670" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+
+  <g font-size="8" fill="#8b949e">
+    <text x="770" y="686" fill="#a371f7" font-weight="700">Tab 1 · Explorer</text>
+    <text x="770" y="700">View selector — all 17 DuckDB views</text>
+    <text x="770" y="713">Date column auto-detect + date range picker</text>
+    <text x="770" y="726">X / Y / Color axis dropdowns</text>
+    <text x="770" y="739">Chart type: line · bar · scatter · area · box · hist</text>
+    <text x="770" y="752">10,000-row query cap · DataTable sort+filter+page</text>
+    <text x="770" y="765">⬇ CSV download  ·  ⬇ Parquet download</text>
+
+    <line x1="960" y1="680" x2="960" y2="800" stroke="#6e40c9" stroke-width="0.5" opacity="0.5"/>
+
+    <text x="968" y="686" fill="#a371f7" font-weight="700">Tab 2 · SQL Passthrough ★</text>
+    <text x="968" y="700">DuckDB read-only live execution</text>
+    <text x="968" y="713">Pre-loaded cross-domain query:</text>
+    <text x="968" y="726" fill="#3fb950">psx × bsp × cpi — monthly aligned</text>
+    <text x="968" y="739">Quick-start library · 4 examples</text>
+    <text x="968" y="752">1,000-row result DataTable</text>
+    <text x="968" y="765">⬇ CSV result download</text>
+    <text x="968" y="793" fill="#4a9eff">http://127.0.0.1:8050</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════ LEGEND -->
+  <rect x="16" y="844" width="1168" height="2" fill="#21262d"/>
+  <g font-size="8" fill="#6e7681">
+    <rect x="28" y="850" width="10" height="6" fill="#3fb950" rx="1"/>
+    <text x="44" y="858">scheduled pipeline</text>
+    <rect x="145" y="850" width="10" height="6" fill="#f0883e" rx="1"/>
+    <text x="161" y="858">manual / user-supplied</text>
+    <rect x="280" y="850" width="10" height="6" fill="#4a9eff" rx="1"/>
+    <text x="296" y="858">data flow</text>
+    <rect x="360" y="850" width="14" height="4" fill="none" stroke="#9b59b6" stroke-dasharray="3 1" rx="1"/>
+    <text x="380" y="858">scheduler trigger</text>
+    <text x="480" y="858" fill="#4a9eff">★ primary interview artifact</text>
+    <text x="900" y="858">Intel Pentium · Windows 10 · DuckDB-local · No Docker · No WSL · No GPU</text>
+  </g>
+</svg>
