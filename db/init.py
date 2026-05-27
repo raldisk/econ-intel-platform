@@ -57,6 +57,10 @@ REQUIRED_OBJECTS: frozenset[str] = frozenset({
     # COA
     "coa_budget_utilization",
     "coa_low_utilizers",
+    # ── Edge A: macro lakehouse enrichment (optional; empty view when R2 absent)
+    "macro_lakehouse_indicators",
+    # ── Edge C: BSP credit exposure (optional; empty view when R3 absent)
+    "credit_exposure",
 })
 
 

@@ -119,10 +119,16 @@ WHERE 1 = 0;
 
 CREATE OR REPLACE VIEW cpi_trend AS
 SELECT
-    NULL::VARCHAR   AS period,
-    NULL::VARCHAR   AS series_code,
-    NULL::DOUBLE    AS value,
-    NULL::DOUBLE    AS yoy_change
+    NULL::DATE      AS period_date,
+    NULL::INTEGER   AS period_year,
+    NULL::INTEGER   AS period_month,
+    NULL::DOUBLE    AS cpi_index,
+    NULL::DOUBLE    AS inflation_pct,
+    NULL::DOUBLE    AS inflation_pct_wb,
+    NULL::VARCHAR   AS period_label,
+    NULL::DOUBLE    AS prev_cpi_index,
+    NULL::DOUBLE    AS cpi_mom_change,
+    NULL::DOUBLE    AS cpi_mom_pct
 WHERE 1 = 0;
 
 
@@ -263,17 +269,17 @@ ASOF JOIN sorted_bsp b
     ON p.date >= b.decision_date
 ORDER BY p.ticker, p.date;
 
--- CPI YoY vs FX monthly — macro overlay (FIXED)
+-- CPI YoY vs FX monthly — macro overlay
 CREATE OR REPLACE VIEW cpi_vs_fx AS
 SELECT
     c.period_date,
-    c.inflation_pct AS cpi_yoy,
+    COALESCE(c.inflation_pct, c.inflation_pct_wb) AS cpi_yoy,
     f.rate          AS usdphp
 FROM cpi_trend c
 LEFT JOIN fx_rates f
     ON DATE_TRUNC('month', c.period_date)
      = DATE_TRUNC('month', f.rate_date)
-WHERE c.inflation_pct IS NOT NULL
+WHERE COALESCE(c.inflation_pct, c.inflation_pct_wb) IS NOT NULL
   AND f.currency_pair = 'USD/PHP'
 ORDER BY c.period_date;
 
@@ -304,3 +310,31 @@ CREATE OR REPLACE VIEW sentiment_topic_trend AS SELECT NULL::DATE AS obs_date, N
 -- COA derived views (stubs — replaced by coa/load.py)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE VIEW coa_low_utilizers AS SELECT NULL::INTEGER AS fiscal_year, NULL::VARCHAR AS agency_code, NULL::DOUBLE AS disbursement_rate WHERE 1=0;
+
+-- ---------------------------------------------------------------------------
+-- Edge A: macro lakehouse indicators (empty until economic pipeline runs with MACRO_LAKEHOUSE_URL set)
+-- Grain: one row per (period, indicator_code) — long/tall format from R2 gold layer.
+-- ---------------------------------------------------------------------------
+CREATE VIEW IF NOT EXISTS macro_lakehouse_indicators AS
+SELECT
+    NULL::VARCHAR  AS period,
+    NULL::VARCHAR  AS indicator_code,
+    NULL::DOUBLE   AS value,
+    NULL::VARCHAR  AS source
+WHERE FALSE;
+
+-- ---------------------------------------------------------------------------
+-- Edge C: BSP credit exposure (empty until credit_risk pipeline runs with CREDIT_RISK_API_URL set)
+-- Grain: one row per closed YYYYMM period_key (BSP Circular 855 reporting period).
+-- All monetary values are USD-denominated (BSP Circular 855 reporting currency).
+-- ---------------------------------------------------------------------------
+CREATE VIEW IF NOT EXISTS credit_exposure AS
+SELECT
+    NULL::VARCHAR  AS period_key,
+    NULL::DOUBLE   AS outstanding_balance_usd,
+    NULL::BIGINT   AS npl_count,
+    NULL::DOUBLE   AS total_rwa_usd,
+    NULL::DOUBLE   AS total_provisions_usd,
+    NULL::BIGINT   AS facility_count,
+    NULL::VARCHAR  AS submitted_at
+WHERE FALSE;
