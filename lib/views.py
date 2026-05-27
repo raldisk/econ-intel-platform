@@ -55,6 +55,25 @@ VIEW_AXIS_HINTS: dict[str, dict[str, str]] = {
     "real_exchange_rate":       {"date_col": "month",         "value_col": "real_rate"},
     "coa_budget_utilization":   {"date_col": "fiscal_year",   "value_col": "disbursement_rate"},
     "coa_low_utilizers":        {"date_col": "fiscal_year",   "value_col": "disbursement_rate"},
+
+    # ── Edge A: macro lakehouse indicators (R2 enrichment) ───────────────────
+    # Long/tall format from R2 gold_macro_indicators endpoint.
+    # indicator_code values depend on R2 pipeline configuration.
+    # Join to cpi_trend / gdp_tracker on period_date for combined analysis.
+    "macro_lakehouse_indicators": {
+        "date_col": "period",
+        "value_col": "value",
+    },
+
+    # ── Edge C: BSP credit risk — monthly regulatory exposure (R3 enrichment) ─
+    # Grain: one row per YYYYMM period_key (closed BSP Circular 855 periods only).
+    # All monetary values in USD at prevailing BSP reference rate for the period.
+    # period_key is an INTEGER (e.g. 202504) — not a date; use as category axis.
+    # Kimball: outstanding_balance_usd is additive within a period, not across.
+    "credit_exposure": {
+        "date_col": "period_key",
+        "value_col": "outstanding_balance_usd",
+    },
 }
 
 
