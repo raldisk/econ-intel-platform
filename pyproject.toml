@@ -29,6 +29,7 @@ dependencies = [
     "uvicorn[standard]>=0.29.0",
     "apscheduler",
     "pdfplumber",
+    "statsmodels>=0.14",
     # PATCH FINDING-008: structlog removed — declared but never imported
 ]
 
@@ -86,10 +87,3 @@ omit = ["tests/*", "notebooks/*"]
 show_missing = true
 skip_covered = false
 
-
-
-# pyproject.toml
-dependencies = [
-  ...
-  "statsmodels>=0.14"
-]

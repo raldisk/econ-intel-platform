@@ -304,3 +304,47 @@ BSP_REMITTANCE_CSV     = None   # Optional Path to BSP monthly remittances CSV
 # World Bank API
 WORLD_BANK_BASE_URL  = "https://api.worldbank.org/v2"
 WORLD_BANK_PER_PAGE  = 100
+
+# ---------------------------------------------------------------------------
+# Cross-repo enrichment — optional upstream integrations
+#
+# Design contract (DDIA fault tolerance):
+#   All values default to None. Absence of any URL disables that enrichment
+#   path entirely and routes directly to the embedded pipeline. No startup
+#   block, no crash. The embedded pipeline is always the last-resort fallback.
+#
+# CI enforcement:
+#   All three URL variables MUST be absent (unset) in the unit test CI job.
+#   Integration tests that require peer services run in a separate gated job.
+# ---------------------------------------------------------------------------
+
+import os as _os  # avoid polluting module namespace; _os used only in this block
+
+# Edge A — macro-data-pipeline (R2) gold-layer serving API
+# Set to http://localhost:8000 in dev (ensure R2 + MinIO are running first).
+# In production, use the internal service DNS name.
+# Note: R2 FastAPI reads gold Parquet from S3/MinIO. MinIO must be running
+# for this URL to serve real data.
+MACRO_LAKEHOUSE_URL: Optional[str] = _os.getenv("MACRO_LAKEHOUSE_URL")
+MACRO_LAKEHOUSE_TIMEOUT: int = int(_os.getenv("MACRO_LAKEHOUSE_TIMEOUT", "10"))
+
+# Edge B — psx-equity-analytics (R4) analytics serving API
+# In single-machine dev, R4 must be remapped from port 8000 to 8004 to avoid
+# collision with R2. Set PSX_ANALYTICS_API_URL=http://localhost:8004 in dev.
+PSX_ANALYTICS_API_URL: Optional[str] = _os.getenv("PSX_ANALYTICS_API_URL")
+PSX_ANALYTICS_TIMEOUT: int = int(_os.getenv("PSX_ANALYTICS_TIMEOUT", "15"))
+
+# Edge C — bsp-credit-risk-warehouse (R3) credit exposure API
+# Set to http://localhost:8003 in dev (ensure R3 PostgreSQL DWH is running).
+CREDIT_RISK_API_URL: Optional[str] = _os.getenv("CREDIT_RISK_API_URL")
+CREDIT_RISK_TIMEOUT: int = int(_os.getenv("CREDIT_RISK_TIMEOUT", "10"))
+
+# Credit risk pipeline schedule — monthly, 2nd of each month at 06:00 UTC
+# Runs on the 2nd (not 1st) to guarantee the prior month is closed in R3.
+# BSP Circular 855 submission deadline is 30 days after period end —
+# the 2nd-of-month schedule is safely within the closed-period window.
+CREDIT_RISK_CRON = "0 6 2 * *"
+
+# Enrichment data directories (created on first run)
+ENRICHMENT_RAW_DIR       = DATA_RAW / "enrichment"
+ENRICHMENT_PROCESSED_DIR = DATA_PROCESSED / "enrichment"
