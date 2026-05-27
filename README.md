@@ -13,13 +13,25 @@ Data flows from nine public government and market sources through ETL pipelines 
 
 ---
 
-## Ecosystem
+## Part of the Philippine Financial Data Platform
 
-This dashboard is the **downstream consumer** of a two-tier Philippine economic intelligence platform.
+| Repository | Role | Port |
+|---|---|---|
+| [econ-intel-platform](https://github.com/raldisk/econ-intel-platform) | Unified intelligence hub — downstream consumer of all enrichment edges | 8001 |
+| [ph-macro-lakehouse](https://github.com/raldisk/ph-macro-lakehouse) | Gold-layer macro data pipeline — FX rates and macro indicators via Parquet/S3 | 8000 |
+| [psx-equity-analytics](https://github.com/raldisk/psx-equity-analytics) | PSX equity microstructure analytics — VWAP, Amihud illiquidity, SARIMA trend | 8004 |
+| [bsp-credit-risk-warehouse](https://github.com/raldisk/bsp-credit-risk-warehouse) | BSP Circular 855 regulatory credit exposure DWH — monthly closed-period serving | 8003 |
+| [iso20022-settlement-engine](https://github.com/raldisk/iso20022-settlement-engine) | ISO 20022 pacs.008 interbank settlement ledger — daily bilateral PHP flow serving | 8002 |
 
-**[ph-macro-lakehouse](https://github.com/raldisk/ph-macro-lakehouse)** is the upstream data quality layer — a production-grade Bronze → Silver → Gold batch pipeline for PSA CPI and BSP FX on S3/MinIO. When the lakehouse is available, the dashboard adapter consumes `GET /gold/{dataset}/data` and bypasses its own BSP/PSA pipelines. When it is unavailable, the dashboard falls back to its embedded pipelines automatically.
+Each repository is independently deployable and self-sufficient. Cross-repo data flows are optional enrichment edges — any repository operates fully without its peers. Connections activate only when the corresponding environment variable is configured.
 
----
+**This repository** is the hub consumer. It optionally draws enriched data from all four peers:
+- [`ph-macro-lakehouse`](https://github.com/raldisk/ph-macro-lakehouse) → gold-layer FX rates and macro indicators (`MACRO_LAKEHOUSE_URL`)
+- [`psx-equity-analytics`](https://github.com/raldisk/psx-equity-analytics) → VWAP, Amihud, SARIMA analytics per PSX ticker (`PSX_ANALYTICS_API_URL`)
+- [`bsp-credit-risk-warehouse`](https://github.com/raldisk/bsp-credit-risk-warehouse) → monthly BSP credit exposure by closed period (`CREDIT_RISK_API_URL`)
+- [`iso20022-settlement-engine`](https://github.com/raldisk/iso20022-settlement-engine) → daily interbank settlement PHP flow, consumed indirectly via `psx-equity-analytics`
+
+Fallback: when any peer is unreachable or its env var is unset, the embedded BSP/PSA/yfinance pipeline runs instead with no degradation.
 
 ## Table of Contents
 

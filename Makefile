@@ -38,8 +38,17 @@ pipelines:
 	python -m pipelines.sentiment.run
 	python -m pipelines.coa.run
 
-api:
+api: _check_db
 	uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
+
+# Production: N workers, no reload. Bootstrap must run before this target.
+# Lifespan validate-only hook is safe across all N workers (read-only DuckDB check).
+prod: _check_db
+	uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# Internal guard — fails loudly if db.init has not been run.
+_check_db:
+	@python -c "import config as cfg; import sys; sys.exit(0) if cfg.DB_PATH.exists() else (print(f'ERROR: {cfg.DB_PATH} not found. Run: make init') or sys.exit(1))"
 
 scheduler:
 	python -m scheduler.main
