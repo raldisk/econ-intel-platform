@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Optional
 
 import config as cfg
+import httpx as _httpx  # prefixed to avoid namespace collision
 from lib.sources.psa import PSAClient
 from lib.sources.worldbank import WorldBankClient, EconomicIndicator, OFWRemittance
 
@@ -181,6 +182,85 @@ def _parse_bsp_csv(csv_path: Path) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Edge A: R2 lakehouse gold-layer adapter — macro indicators
+#
+# Data contract (R2 pipeline/contracts/gold_macro_indicators.yaml):
+#   Columns: period (date), indicator_code (string), value (double), source (string)
+#   Format: long/tall — one row per (period, indicator_code) combination
+#   Example indicator_codes: "CPI", "GDP_GROWTH", "UNEMPLOYMENT", etc.
+#
+# Design decision (additive enrichment, not replacement):
+#   Rather than attempting to map this long-format data to the existing
+#   EconomicIndicator dataclass (which has a fixed wide schema from worldbank.py),
+#   the lakehouse adapter writes a SEPARATE raw file (lakehouse_macro.parquet)
+#   that is loaded as its own DuckDB view: macro_lakehouse_indicators.
+#
+# DDIA: any failure → None returned → existing pipeline runs normally.
+# ---------------------------------------------------------------------------
+
+@dataclass
+class LakehouseMacroRecord:
+    """Raw record from R2 gold_macro_indicators endpoint."""
+    period: str           # ISO date string (YYYY-MM-DD)
+    indicator_code: str   # e.g. "CPI", "GDP_GROWTH"
+    value: float
+    source: str           # original R2 source tag
+
+
+def _try_lakehouse_macro() -> list[LakehouseMacroRecord] | None:
+    """
+    Attempt to pull macro indicators from R2 gold layer.
+
+    Returns list[LakehouseMacroRecord] on success, None on any failure.
+    """
+    if not cfg.MACRO_LAKEHOUSE_URL:
+        return None
+
+    url = f"{cfg.MACRO_LAKEHOUSE_URL.rstrip('/')}/gold/gold_macro_indicators/data"
+    try:
+        resp = _httpx.get(url, timeout=cfg.MACRO_LAKEHOUSE_TIMEOUT)
+        resp.raise_for_status()
+        rows: list[dict] = resp.json()
+
+        if not rows:
+            logger.warning("[economic] Lakehouse returned 0 macro rows.")
+            return None
+
+        records = []
+        skipped = 0
+        for r in rows:
+            try:
+                records.append(
+                    LakehouseMacroRecord(
+                        period=str(r["period"]),
+                        indicator_code=str(r["indicator_code"]),
+                        value=float(r["value"]),
+                        source=str(r.get("source", "macro_lakehouse")),
+                    )
+                )
+            except (KeyError, TypeError, ValueError) as row_exc:
+                skipped += 1
+                logger.debug("[economic] Skipped malformed macro row: %s — %s", r, row_exc)
+
+        if skipped:
+            logger.warning("[economic] Skipped %d malformed macro rows.", skipped)
+
+        if not records:
+            return None
+
+        logger.info("[economic] Lakehouse enrichment: %d macro records from R2.", len(records))
+        return records
+
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "[economic] Lakehouse macro unavailable (%s: %s) — "
+            "embedded PSA/World Bank pipeline continues normally.",
+            type(exc).__name__, exc,
+        )
+        return None
+
+
+# ---------------------------------------------------------------------------
 # EconomicIndicator / OFWRemittance → dict converters for World Bank records
 # ---------------------------------------------------------------------------
 
@@ -284,3 +364,18 @@ def extract() -> None:
         "Economic extract complete: %d indicators, %d remittances → %s",
         len(indicators), len(remittances), cfg.ECONOMIC_RAW_DIR,
     )
+
+    # ── Edge A: write lakehouse macro indicators if available ─────────────
+    # Written AFTER the main extract so failure here never blocks core data.
+    lakehouse_records = _try_lakehouse_macro()
+    if lakehouse_records is not None:
+        import pandas as pd
+        lk_dir = cfg.ENRICHMENT_RAW_DIR
+        lk_dir.mkdir(parents=True, exist_ok=True)
+        lk_path = lk_dir / "lakehouse_macro.parquet"
+        pd.DataFrame(
+            [{"period": r.period, "indicator_code": r.indicator_code,
+              "value": r.value, "source": r.source}
+             for r in lakehouse_records]
+        ).to_parquet(lk_path, index=False)
+        logger.info("[economic] Lakehouse macro Parquet written: %s", lk_path)

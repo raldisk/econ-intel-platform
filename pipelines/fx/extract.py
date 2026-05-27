@@ -33,6 +33,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 import config as cfg
+import httpx as _httpx  # prefixed to avoid clash with the httpx.Client used in BSP scrape
 
 logger = logging.getLogger(__name__)
 
@@ -231,14 +232,90 @@ def fetch_frankfurter_daily(client: httpx.Client) -> Optional[FXRate]:
 
 
 # ---------------------------------------------------------------------------
+# Edge A: R2 lakehouse gold-layer adapter
+#
+# Data contract (R2 pipeline/contracts/gold_exchange_rates.yaml):
+#   Columns: period (date), currency_pair (string), rate (double), source (string)
+#   Format: long/tall — one row per (period, currency_pair) combination
+#
+# Mapping to R1 FXRate:
+#   period       → rate_date (ISO string)
+#   currency_pair → currency_pair (pass-through; e.g. "USD/PHP", "EUR/PHP")
+#   rate         → rate (float)
+#   source       → source (overridden to "macro_lakehouse" for lineage clarity)
+#
+# DDIA tradeoff: on ANY failure (network, timeout, bad status, malformed JSON)
+# this function returns None and the caller falls back to BSP scrape.
+# ---------------------------------------------------------------------------
+
+def _try_lakehouse_fx() -> list[FXRate] | None:
+    """
+    Attempt to pull exchange rates from R2 gold layer.
+
+    Returns list[FXRate] on success, None on any failure.
+    Caller is responsible for fallback.
+    """
+    if not cfg.MACRO_LAKEHOUSE_URL:
+        return None
+
+    url = f"{cfg.MACRO_LAKEHOUSE_URL.rstrip('/')}/gold/gold_exchange_rates/data"
+    try:
+        resp = _httpx.get(url, timeout=cfg.MACRO_LAKEHOUSE_TIMEOUT)
+        resp.raise_for_status()
+        rows: list[dict] = resp.json()
+
+        if not rows:
+            logger.warning("[fx] Lakehouse returned 0 rows — falling back to BSP scrape.")
+            return None
+
+        rates = []
+        skipped = 0
+        for r in rows:
+            try:
+                rates.append(
+                    FXRate(
+                        rate_date=str(r["period"]),          # R2 contract: 'period' (date)
+                        currency_pair=str(r["currency_pair"]),  # R2 contract: 'currency_pair'
+                        rate=float(r["rate"]),               # R2 contract: 'rate' (double)
+                        source="macro_lakehouse",            # Override for data lineage
+                    )
+                )
+            except (KeyError, TypeError, ValueError) as row_exc:
+                skipped += 1
+                logger.debug("[fx] Skipped malformed lakehouse row: %s — %s", r, row_exc)
+
+        if skipped:
+            logger.warning("[fx] Skipped %d malformed rows from lakehouse.", skipped)
+
+        if not rates:
+            logger.warning("[fx] Lakehouse rows all malformed — falling back to BSP scrape.")
+            return None
+
+        logger.info("[fx] Lakehouse enrichment: %d FXRate records from R2.", len(rates))
+        return rates
+
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "[fx] Lakehouse unavailable (%s: %s) — falling back to BSP scrape.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
+# ---------------------------------------------------------------------------
 # extract() — public entry point
 # ---------------------------------------------------------------------------
 
 def extract() -> None:
     """
-    Fetch all FX sources and write to data/raw/fx/.
+    Pull FX rates. Attempts R2 lakehouse first; falls back to BSP scrape.
+
+    Edge A integration: MACRO_LAKEHOUSE_URL absent or R2 unreachable → BSP scrape.
+    No behavior change when MACRO_LAKEHOUSE_URL is unset.
 
     Priority:
+      0. R2 lakehouse gold layer (if MACRO_LAKEHOUSE_URL is set and reachable).
       1. BSP RERB daily + Table 12 monthly historical + Table 13 cross rates.
       2. If RERB fails, Frankfurter provides the current daily rate.
       3. Raises RuntimeError if no daily rate is obtained from any source.
@@ -248,6 +325,22 @@ def extract() -> None:
       data/raw/fx/fx_cross.json  — list of CrossRate dicts
     """
     cfg.FX_RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ── Edge A: attempt lakehouse gold layer ───────────────────────────────
+    lakehouse_rates = _try_lakehouse_fx()
+    if lakehouse_rates is not None:
+        # Write to same output path as BSP scrape — downstream is transparent
+        out = cfg.FX_RAW_DIR / "fx_daily.json"
+        out.write_text(
+            __import__("json").dumps(
+                [__import__("dataclasses").asdict(r) for r in lakehouse_rates]
+            ),
+            encoding="utf-8",
+        )
+        logger.info("[fx] extract() complete via lakehouse: %d records.", len(lakehouse_rates))
+        return
+    # ── Fallback: existing BSP scrape unchanged below this line ───────────
+
     logger.info("FX extract: starting ...")
 
     daily_records: list[FXRate] = []

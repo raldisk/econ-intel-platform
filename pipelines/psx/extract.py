@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pandas as pd
 import yfinance as yf
+import httpx as _httpx  # prefixed; used only in _enrich_with_psx_analytics
 
 import config as cfg
 
@@ -73,6 +74,96 @@ def _quality_check(df: pd.DataFrame, ticker: str) -> bool:
         return False
 
     return True
+
+
+# ---------------------------------------------------------------------------
+# Edge B: psx-equity-analytics (R4) optional enrichment adapter
+#
+# Enrichment columns from R4 GET /analytics/daily:
+#   vwap (float)               — Volume-Weighted Average Price [NON-ADDITIVE]
+#   amihud_illiquidity (float) — |daily_return| / daily_volume
+#   price_impact_bps (float)   — Amihud in basis points (derived)
+#   trend_component (float)    — SARIMA trend decomposition
+#   sarima_status (string)     — OK | FAILED_CONVERGENCE | INSUFFICIENT_DATA | SKIPPED_NO_STATSMODELS
+#
+# Kimball note: vwap is non-additive across time. Summing VWAP across days
+# is semantically wrong. VIEW_AXIS_HINTS carries a warning for dashboard authors.
+#
+# Design: enrichment is a post-pass after yfinance download. Enrichment failure
+# for a single ticker does NOT affect other tickers.
+# ---------------------------------------------------------------------------
+
+_ENRICHMENT_COLS = [
+    "vwap", "amihud_illiquidity", "price_impact_bps",
+    "trend_component", "sarima_status",
+]
+
+
+def _enrich_with_psx_analytics(
+    df: pd.DataFrame,
+    ticker: str,
+    start_date: str,
+    end_date: str,
+) -> pd.DataFrame:
+    """
+    Attempt to add R4 analytics columns to a single-ticker DataFrame.
+
+    Args:
+        df: DataFrame with at least 'Date' and 'ticker' columns.
+        ticker: PSX ticker symbol (e.g. 'SM.PS').
+        start_date: ISO date string for query range start.
+        end_date: ISO date string for query range end.
+
+    Returns:
+        Original df with analytics columns merged on Date, or original df
+        unchanged if PSX_ANALYTICS_API_URL is unset or R4 is unreachable.
+    """
+    if not cfg.PSX_ANALYTICS_API_URL:
+        return df  # enrichment disabled — caller gets OHLCV-only frame
+
+    try:
+        resp = _httpx.get(
+            f"{cfg.PSX_ANALYTICS_API_URL.rstrip('/')}/analytics/daily",
+            params={"symbol": ticker, "start_date": start_date, "end_date": end_date},
+            timeout=cfg.PSX_ANALYTICS_TIMEOUT,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        rows = payload.get("data", []) if isinstance(payload, dict) else payload
+
+        if not rows:
+            logger.debug("[psx] No analytics rows returned for %s.", ticker)
+            return df
+
+        enrichment = pd.DataFrame(rows)
+        # R4 returns 'session_date' for the date column — normalise to 'Date'
+        if "session_date" in enrichment.columns:
+            enrichment = enrichment.rename(columns={"session_date": "Date"})
+        elif "date" in enrichment.columns:
+            enrichment = enrichment.rename(columns={"date": "Date"})
+        else:
+            logger.warning("[psx] R4 response for %s has no recognisable date column.", ticker)
+            return df
+
+        # Keep only the date key + enrichment columns (guard against schema drift)
+        available_cols = ["Date"] + [c for c in _ENRICHMENT_COLS if c in enrichment.columns]
+        enrichment = enrichment[available_cols].copy()
+
+        merged = df.merge(enrichment, on="Date", how="left")
+        logger.debug(
+            "[psx] Analytics enrichment for %s: %d date(s) matched.",
+            ticker,
+            merged[_ENRICHMENT_COLS[0]].notna().sum() if _ENRICHMENT_COLS[0] in merged.columns else 0,
+        )
+        return merged
+
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "[psx] Analytics enrichment failed for %s (%s: %s) — "
+            "OHLCV-only data retained for this ticker.",
+            ticker, type(exc).__name__, exc,
+        )
+        return df
 
 
 def extract() -> None:
@@ -161,6 +252,10 @@ def extract() -> None:
 
             df.reset_index(inplace=True)
             df["ticker"] = ticker
+
+            # ── Edge B: attempt analytics enrichment (non-fatal) ──────────
+            df = _enrich_with_psx_analytics(df, ticker, cfg.PSX_START_DATE, today)
+            # ── End Edge B enrichment ──────────────────────────────────────
 
             path = _raw_path(ticker)
 
