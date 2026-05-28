@@ -4,14 +4,15 @@ credit_risk/extract.py
 Pull monthly credit exposure from bsp-credit-risk-warehouse (R3) FastAPI.
 
 API contract (R3 GET /credit-exposure?period_key=YYYYMM):
-  Response columns (verified against R3 V002__fact_credit_exposure.sql DDL):
-    period_key              (INTEGER as string in JSON)
-    outstanding_balance_usd — SUM of outstanding_balance_usd across facilities
-    npl_count               — COUNT of facilities with npl_flag=TRUE
-    total_rwa_usd           — SUM of risk_weighted_asset_usd
-    total_provisions_usd    — SUM of provision_amount_usd
-    facility_count          — COUNT(DISTINCT facility_key)
-    submitted_at            — MAX(insertion_timestamp) as text
+  Response columns (verified against R3 CreditExposureResponse Pydantic model
+  and V002__fact_credit_exposure.sql DDL):
+    period_key                      (INTEGER as string in JSON)
+    total_outstanding_balance_usd   — SUM of outstanding_balance_usd across facilities
+    npl_count                       — COUNT of facilities with npl_flag=TRUE
+    total_risk_weighted_asset_usd   — SUM of risk_weighted_asset_usd
+    total_provision_amount_usd      — SUM of provision_amount_usd
+    facility_count                  — COUNT(*) total facilities
+    submitted_at                    — MAX(insertion_timestamp) as text
 
 Fallback: CREDIT_RISK_API_URL absent or R3 unreachable → return None.
 Caller (run.py) writes empty-schema Parquet on None return.
@@ -80,10 +81,10 @@ def extract_credit_exposure(period_key: str) -> Optional[CreditExposureRecord]:
 
         return CreditExposureRecord(
             period_key=str(d["period_key"]),
-            outstanding_balance_usd=float(d["outstanding_balance_usd"]),
+            outstanding_balance_usd=float(d["total_outstanding_balance_usd"]),
             npl_count=int(d.get("npl_count", 0)),
-            total_rwa_usd=float(d["total_rwa_usd"]),
-            total_provisions_usd=float(d["total_provisions_usd"]),
+            total_rwa_usd=float(d["total_risk_weighted_asset_usd"]),
+            total_provisions_usd=float(d["total_provision_amount_usd"]),
             facility_count=int(d["facility_count"]),
             submitted_at=d.get("submitted_at"),
         )
